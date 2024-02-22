@@ -12,5 +12,5 @@ dependencyResolutionManagement {
     mavenCentral()
   }
 }
-rootProject.name = "authSdk"
+rootProject.name = "Amazon Location Auth SDK"
 include("library")
