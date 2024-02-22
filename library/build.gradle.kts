@@ -8,7 +8,7 @@ plugins {
 
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.DEFAULT, automaticRelease = true)
-//    signAllPublications()
+    signAllPublications()
 
     coordinates("software.amazon.location", "auth", "0.0.1")
 
