@@ -83,7 +83,7 @@ class AuthHelper(private val context: Context) {
     fun getLocationClient(credentialsProvider: AWSCredentialsProvider): AmazonLocationClient =
         AmazonLocationClient(credentialsProvider)
 
-    suspend fun authenticateWithUsernameAndPassword(
+    suspend fun authenticateWithUserPoolId(
         identityPoolId: String,
         userPoolId: String,
         clientId: String,
