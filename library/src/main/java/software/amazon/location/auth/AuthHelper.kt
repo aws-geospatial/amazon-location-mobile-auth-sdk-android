@@ -83,6 +83,15 @@ class AuthHelper(private val context: Context) {
     fun getLocationClient(credentialsProvider: AWSCredentialsProvider): AmazonLocationClient =
         AmazonLocationClient(credentialsProvider)
 
+    /**
+     * Authenticates with the provided user pool ID and identity pool ID, and returns a
+     * [LocationCredentialsProvider] if successful.
+     *
+     * @param identityPoolId The identity pool ID for authentication.
+     * @param userPoolId The user pool ID for authentication.
+     * @param clientId The client ID associated with the user pool.
+     * @return A [LocationCredentialsProvider] if authentication is successful, null otherwise.
+     */
     suspend fun authenticateWithUserPoolId(
         identityPoolId: String,
         userPoolId: String,
@@ -129,6 +138,13 @@ class AuthHelper(private val context: Context) {
         }
     }
 
+    /**
+     * Signs in a user with the provided username and password, and notifies the callback upon completion.
+     *
+     * @param userName The username of the user to sign in.
+     * @param password The password of the user.
+     * @param callback The callback to be notified upon completion or failure of the sign-in process.
+     */
     suspend fun userSignIn(
         userName: String,
         password: String,
@@ -166,6 +182,22 @@ class AuthHelper(private val context: Context) {
         }
     }
 
+    /**
+     * Signs out the current user.
+     */
+    fun userSignOut() {
+        AWSMobileClient.getInstance().signOut()
+    }
+
+    /**
+     * Generates and returns JSON configuration for AWS based on provided parameters.
+     *
+     * @param poolID The pool ID used for authentication.
+     * @param userPoolId The user pool ID for authentication.
+     * @param appClientId The client ID associated with the user pool.
+     * @param region The AWS region.
+     * @return A JSON string representing the AWS configuration.
+     */
     private fun getAwsConfigJson(
         poolID: String?,
         userPoolId: String? = null,
