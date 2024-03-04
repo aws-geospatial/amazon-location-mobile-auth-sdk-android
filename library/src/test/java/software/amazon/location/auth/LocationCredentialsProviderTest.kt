@@ -11,8 +11,8 @@ import io.mockk.runs
 import io.mockk.verify
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertNotNull
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 
 private const val TEST_IDENTITY_POOL_ID = "us-east-1:dummyIdentityPoolId"
 private const val TEST_API_KEY = "dummyApiKey"
@@ -73,7 +73,7 @@ class LocationCredentialsProviderTest {
     @Test
     fun `clear successfully clears cognito credentials`() {
         val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, Regions.US_EAST_1)
-        provider.clear() // Assuming this doesn't throw, the test passes. Adjust based on actual behavior.
+        provider.clear()
     }
 
     @Test

@@ -18,13 +18,10 @@ private const val TEST_API_KEY = "dummyApiKey"
 class ApiKeyCredentialsProviderTest {
 
     private lateinit var context: Context
-    private lateinit var awsKeyValueStore: AWSKeyValueStore
 
     @Before
     fun setUp() {
         context = mockk(relaxed = true)
-        awsKeyValueStore = mockk(relaxed = true)
-        mockkConstructor(AWSKeyValueStore::class)
 
         mockkConstructor(AWSKeyValueStore::class)
         every { anyConstructed<AWSKeyValueStore>().put(any(), any<String>()) } just runs
