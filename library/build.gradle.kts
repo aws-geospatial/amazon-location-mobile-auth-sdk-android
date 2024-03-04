@@ -42,7 +42,7 @@ mavenPublishing {
 android {
 
     namespace = "software.amazon.location.auth"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 24
@@ -79,6 +79,9 @@ dependencies {
     implementation("com.amazonaws:aws-android-sdk-location:2.72.0")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.20")
+    testImplementation("io.mockk:mockk:1.13.10")
+
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
