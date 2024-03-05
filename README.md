@@ -2,13 +2,56 @@
 
 These utilities help you authenticate when making [Amazon Location Service](https://aws.amazon.com/location/) API calls from your Android applications. This specifically helps when using [Amazon Cognito](https://docs.aws.amazon.com/location/latest/developerguide/authenticating-using-cognito.html) or [API keys](https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html) as the authentication method.
 
+## Installation
+
+This authentication SDK works with the overall AWS SDK. Both SDKs are published to Maven Central.
+
+Add the following lines to the dependencies section of your build.gradle file in Android Studio:
+
+```
+implementation("software.amazon.location:auth:0.0.1")
+implementation("com.amazonaws:aws-android-sdk-location:2.72.0")
+```
+
 ## Usage
 
-Import the library and call the utility functions in the top-level namespace as needed. You can find more details about these functions in the [Documentation](#documentation) section.
+Import the following classes in your code:
 
-## Documentation
+```
+import com.amazonaws.services.geo.AmazonLocationClient
 
-Detailed documentation is available on the Amazon Location Service documentation website: https://docs.aws.amazon.com/location/latest/developerguide/using-amazon-location.html
+import software.amazon.location.auth.AuthHelper
+import software.amazon.location.auth.LocationCredentialsProvider
+```
+
+You can create an AuthHelper and use it with the AWS SDK:
+
+```
+// Create an authentication helper instance using an Amazon Location API Key
+private fun exampleAPIKeyLogin() {
+        var authHelper = AuthHelper(applicationContext)
+        var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithApiKey("My-Amazon-Location-API-Key")
+        var locationClient = authHelper.getLocationClient(locationCredentialsProvider.getCredentialsProvider())
+}
+```
+
+```
+// Create an authentication helper using credentials from Cognito
+private fun exampleCognitoLogin() {
+        var authHelper = AuthHelper(applicationContext)
+        var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCognitoIdentityPool("My-Cognito-Identity-Pool-Id")
+        var locationClient = authHelper.getLocationClient(locationCredentialsProvider.getCredentialsProvider())
+}
+```
+
+You can use the AmazonLocationClient to make calls to Amazon Location Service. Here is an example that searches for places near a specified latitude and longitude:
+
+```
+var searchPlaceIndexForPositionRequest = SearchPlaceIndexForPositionRequest()
+    .withIndexName("My-Place-Index-Name")
+    .withPosition(arrayListOf(30.405423, -97.718833))
+var nearbyPlaces = locationClient.searchPlaceIndexForPosition(searchPlaceIndexForPositionRequest)
+```
 
 ## Security
 
