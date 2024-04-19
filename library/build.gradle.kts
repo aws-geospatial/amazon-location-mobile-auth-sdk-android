@@ -77,6 +77,7 @@ dependencies {
     implementation("com.amazonaws:aws-android-sdk-mobile-client:2.73.0")
     implementation("com.amazonaws:aws-android-sdk-auth-userpools:2.73.0")
     implementation("com.amazonaws:aws-android-sdk-location:2.72.0")
+    implementation("com.squareup.okhttp3:okhttp:4.9.2")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.20")
