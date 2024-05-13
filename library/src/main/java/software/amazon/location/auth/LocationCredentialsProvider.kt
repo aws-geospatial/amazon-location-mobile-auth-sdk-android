@@ -6,7 +6,7 @@ import com.amazonaws.auth.CognitoCachingCredentialsProvider
 import com.amazonaws.internal.keyvaluestore.AWSKeyValueStore
 import com.amazonaws.regions.Regions
 
-private const val PREFS_NAME = "software.amazon.location.auth"
+const val PREFS_NAME = "software.amazon.location.auth"
 
 /**
  * Provides credentials for accessing location-based services through Cognito or API key authentication.
@@ -24,6 +24,9 @@ class LocationCredentialsProvider {
      */
     constructor(context: Context, identityPoolId: String, region: Regions) {
         awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
+        val cognitoCredentialsProvider = CognitoCredentialsProvider(region.getName(), awsKeyValueStore)
+
+        cognitoCredentialsProvider.getIdentityId(identityPoolId)
         val cognitoCachingCredentialsProvider = CognitoCachingCredentialsProvider(
             context,
             identityPoolId,
