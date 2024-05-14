@@ -24,9 +24,6 @@ class LocationCredentialsProvider {
      */
     constructor(context: Context, identityPoolId: String, region: Regions) {
         awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
-        val cognitoCredentialsProvider = CognitoCredentialsProvider(region.getName(), awsKeyValueStore)
-
-        cognitoCredentialsProvider.getIdentityId(identityPoolId)
         val cognitoCachingCredentialsProvider = CognitoCachingCredentialsProvider(
             context,
             identityPoolId,
@@ -83,6 +80,24 @@ class LocationCredentialsProvider {
                 throw Exception("No credentials found")
             }
         }
+    }
+
+    suspend fun generateCredentials(identityPoolId: String, region: Regions): Boolean {
+        val cognitoCredentialsProvider = CognitoCredentialsProvider(region.getName())
+        try {
+            val identityId = cognitoCredentialsProvider.getIdentityId(identityPoolId)
+            if (identityId.isNotEmpty()) {
+                val credentials = cognitoCredentialsProvider.getCredentials(identityId)
+                awsKeyValueStore.put("accessKeyId", credentials.credentials.accessKeyId)
+                awsKeyValueStore.put("secretKey", credentials.credentials.secretKey)
+                awsKeyValueStore.put("sessionToken", credentials.credentials.sessionToken)
+                awsKeyValueStore.put("expiration", credentials.credentials.expiration.toString())
+                return true
+            }
+        } catch (e: Exception) {
+           e.printStackTrace()
+        }
+        return false
     }
 
     /**
