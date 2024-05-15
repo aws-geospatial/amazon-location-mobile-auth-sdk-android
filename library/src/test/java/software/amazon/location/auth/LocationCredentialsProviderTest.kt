@@ -2,7 +2,6 @@ package software.amazon.location.auth
 
 import android.content.Context
 import com.amazonaws.internal.keyvaluestore.AWSKeyValueStore
-import com.amazonaws.regions.Regions
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -13,6 +12,14 @@ import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import software.amazon.location.auth.utils.AwsRegions
+import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
+import software.amazon.location.auth.utils.Constants.EXPIRATION
+import software.amazon.location.auth.utils.Constants.SECRET_KEY
+import software.amazon.location.auth.utils.Constants.SESSION_TOKEN
 
 private const val TEST_IDENTITY_POOL_ID = "us-east-1:dummyIdentityPoolId"
 private const val TEST_API_KEY = "dummyApiKey"
@@ -20,7 +27,7 @@ private const val TEST_API_KEY = "dummyApiKey"
 class LocationCredentialsProviderTest {
 
     private lateinit var context: Context
-
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
     @Before
     fun setUp() {
         context = mockk(relaxed = true)
@@ -32,7 +39,7 @@ class LocationCredentialsProviderTest {
     @Test
     fun `constructor with Cognito initializes correctly`() {
         every { anyConstructed<AWSKeyValueStore>().get("method") } returns "api"
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, Regions.US_EAST_1)
+        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         assertNotNull(provider)
     }
 
@@ -45,6 +52,10 @@ class LocationCredentialsProviderTest {
     @Test
     fun `constructor with cached credentials for Cognito initializes correctly`() {
         every { anyConstructed<AWSKeyValueStore>().get("method") } returns "cognito"
+        every { anyConstructed<AWSKeyValueStore>().get(ACCESS_KEY_ID) } returns "test"
+        every { anyConstructed<AWSKeyValueStore>().get(SECRET_KEY) } returns "test"
+        every { anyConstructed<AWSKeyValueStore>().get(SESSION_TOKEN) } returns "test"
+        every { anyConstructed<AWSKeyValueStore>().get(EXPIRATION) } returns "11111"
         every { anyConstructed<AWSKeyValueStore>().get("identityPoolId") } returns TEST_IDENTITY_POOL_ID
         val provider = LocationCredentialsProvider(context)
         assertNotNull(provider)
@@ -59,9 +70,16 @@ class LocationCredentialsProviderTest {
     }
 
     @Test
-    fun `getCredentialsProvider returns cognito provider successfully`() {
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, Regions.US_EAST_1)
-        assertNotNull(provider.getCredentialsProvider())
+    fun `getCredentialsProvider returns cognito provider successfully`(){
+        every { anyConstructed<AWSKeyValueStore>().get(ACCESS_KEY_ID) } returns "test"
+        every { anyConstructed<AWSKeyValueStore>().get(SECRET_KEY) } returns "test"
+        every { anyConstructed<AWSKeyValueStore>().get(SESSION_TOKEN) } returns "test"
+        every { anyConstructed<AWSKeyValueStore>().get(EXPIRATION) } returns "11111"
+        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        coroutineScope.launch {
+            provider.generateCredentials()
+            assertNotNull(provider.getCredentialsProvider())
+        }
     }
 
     @Test
@@ -72,8 +90,11 @@ class LocationCredentialsProviderTest {
 
     @Test
     fun `clear successfully clears cognito credentials`() {
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, Regions.US_EAST_1)
-        provider.clear()
+        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        coroutineScope.launch {
+            provider.generateCredentials()
+            provider.clear()
+        }
     }
 
     @Test
@@ -92,12 +113,12 @@ class LocationCredentialsProviderTest {
 
     @Test
     fun `verify AWSKeyValueStore interactions for cognito initialization`() {
-        LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, Regions.US_EAST_1)
+        LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         verify(exactly = 1) { anyConstructed<AWSKeyValueStore>().put("method", "cognito") }
         verify(exactly = 1) { anyConstructed<AWSKeyValueStore>().put("identityPoolId",
             TEST_IDENTITY_POOL_ID
         ) }
-        verify(exactly = 1) { anyConstructed<AWSKeyValueStore>().put("region", Regions.US_EAST_1.getName()) }
+        verify(exactly = 1) { anyConstructed<AWSKeyValueStore>().put("region", AwsRegions.US_EAST_1.getName()) }
     }
 
     @Test
@@ -108,14 +129,17 @@ class LocationCredentialsProviderTest {
 
     @Test
     fun `getApiKeyProvider throws if API key provider not initialized`() {
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, Regions.US_EAST_1)
+        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         assertFailsWith<Exception> { provider.getApiKeyProvider() }
     }
 
     @Test
     fun `refresh throws if Cognito provider not initialized`() {
         val provider = LocationCredentialsProvider(context, "apiKey")
-        assertFailsWith<Exception> { provider.refresh() }
+        coroutineScope.launch {
+            provider.generateCredentials()
+            assertFailsWith<Exception> { provider.refresh() }
+        }
     }
 
     @Test

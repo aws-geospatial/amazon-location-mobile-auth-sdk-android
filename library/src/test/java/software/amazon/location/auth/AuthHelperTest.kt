@@ -1,8 +1,6 @@
 package software.amazon.location.auth
 
 import android.content.Context
-import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.regions.Regions
 import io.mockk.mockk
 import org.junit.Before
 import org.junit.Test
@@ -10,6 +8,7 @@ import kotlin.test.assertNotNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import software.amazon.location.auth.utils.AwsRegions
 
 private const val TEST_IDENTITY_POOL_ID = "us-east-1:dummyIdentityPoolId"
 private const val TEST_API_KEY = "dummyApiKey"
@@ -48,7 +47,7 @@ class AuthHelperTest {
             val provider =
                 authHelper.authenticateWithCognitoIdentityPool(
                     TEST_IDENTITY_POOL_ID,
-                    Regions.US_EAST_1
+                    AwsRegions.US_EAST_1
                 )
             assertNotNull(provider)
         }
@@ -58,12 +57,5 @@ class AuthHelperTest {
     fun `authenticateWithApiKey creates LocationCredentialsProvider`() {
         val provider = authHelper.authenticateWithApiKey(TEST_API_KEY)
         assertNotNull(provider)
-    }
-
-    @Test
-    fun `getLocationClient creates AmazonLocationClient with provided credentials provider`() {
-        val credentialsProvider = mockk<AWSCredentialsProvider>(relaxed = true)
-        val locationClient = authHelper.getLocationClient(credentialsProvider)
-        assertNotNull(locationClient)
     }
 }

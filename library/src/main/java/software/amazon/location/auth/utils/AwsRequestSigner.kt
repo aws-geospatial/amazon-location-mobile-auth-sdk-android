@@ -17,8 +17,8 @@ internal fun Request.signed(accessKeyId: String, accessKey: String, region: Stri
         .header(HEADER_AUTHORIZATION, awsAuthorizationHeader(accessKeyId, accessKey, region, service))
         .build()
 
-internal fun Request.awsAuthorizationHeader(accesKeyId: String, accessKey: String, region: String, service: String) =
-    "$SIGNING_ALGORITHM Credential=$accesKeyId/${credentialScope(
+internal fun Request.awsAuthorizationHeader(accessKeyId: String, accessKey: String, region: String, service: String) =
+    "$SIGNING_ALGORITHM Credential=$accessKeyId/${credentialScope(
         region,
         service
     )}, SignedHeaders=${signedHeaders()}, Signature=${signature(
