@@ -1,6 +1,7 @@
-package software.amazon.location.auth.utils;
+package software.amazon.location.auth.utils
 
-public enum AwsRegions {
+
+enum class AwsRegions(val regionName: String) {
     GovCloud("us-gov-west-1"),
     US_GOV_EAST_1("us-gov-east-1"),
     US_EAST_1("us-east-1"),
@@ -33,23 +34,10 @@ public enum AwsRegions {
     AP_SOUTH_2("ap-south-2"),
     IL_CENTRAL_1("il-central-1");
 
-    private final String name;
-
-    AwsRegions(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public static AwsRegions fromName(String regionName) {
-        for (final AwsRegions region : AwsRegions.values()) {
-            if (regionName.equals(region.getName())) {
-                return region;
-            }
+    companion object {
+        fun fromName(regionName: String): AwsRegions {
+            return entries.find { it.regionName == regionName }
+                ?: throw IllegalArgumentException("Cannot create enum from $regionName value!")
         }
-        throw new IllegalArgumentException("Cannot create enum from " + regionName + " value!");
     }
-
 }

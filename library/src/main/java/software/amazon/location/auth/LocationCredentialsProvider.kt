@@ -32,7 +32,7 @@ class LocationCredentialsProvider {
         awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
         awsKeyValueStore.put(METHOD, "cognito")
         awsKeyValueStore.put(IDENTITY_POOL_ID, identityPoolId)
-        awsKeyValueStore.put(REGION, region.getName())
+        awsKeyValueStore.put(REGION, region.name)
     }
 
     /**

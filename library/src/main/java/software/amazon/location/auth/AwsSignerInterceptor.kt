@@ -22,7 +22,7 @@ import software.amazon.location.auth.utils.Constants.REGION
 import software.amazon.location.auth.utils.Constants.TIME_PATTERN
 import software.amazon.location.auth.utils.signed
 
-open class AwsSignerInterceptor(
+class AwsSignerInterceptor(
     private val context: Context,
     private val serviceName: String,
     private val credentialsProvider: Credentials?
