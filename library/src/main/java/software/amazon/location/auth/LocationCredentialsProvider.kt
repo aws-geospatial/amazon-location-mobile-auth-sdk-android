@@ -87,7 +87,7 @@ class LocationCredentialsProvider {
      *
      * @return True if the credentials were successfully generated and stored, false otherwise.
      */
-    suspend fun generateCredentials(): Boolean {
+    suspend fun generateCredentials() {
         val identityPoolId = awsKeyValueStore.get(IDENTITY_POOL_ID)
         val region = awsKeyValueStore.get(REGION)
         if (identityPoolId === null || region === null) throw Exception("No credentials found")
@@ -97,12 +97,10 @@ class LocationCredentialsProvider {
             if (identityId.isNotEmpty()) {
                 val credentials = cognitoCredentialsHttpHelper.getCredentials(identityId)
                 cognitoCredentialsProvider = CognitoCredentialsProvider(context, credentials.credentials)
-                return true
             }
         } catch (e: Exception) {
-           e.printStackTrace()
+            throw Exception("Credentials generation failed")
         }
-        return false
     }
 
     /**
