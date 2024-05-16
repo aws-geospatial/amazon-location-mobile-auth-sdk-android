@@ -82,7 +82,7 @@ class LocationCredentialsProvider {
         }
     }
 
-    suspend fun generateCredentials(identityPoolId: String, region: Regions): Boolean {
+    suspend fun generateCredentials(identityPoolId: String, region: Regions) {
         val cognitoCredentialsProvider = CognitoCredentialsProvider(region.getName())
         try {
             val identityId = cognitoCredentialsProvider.getIdentityId(identityPoolId)
@@ -92,12 +92,10 @@ class LocationCredentialsProvider {
                 awsKeyValueStore.put("secretKey", credentials.credentials.secretKey)
                 awsKeyValueStore.put("sessionToken", credentials.credentials.sessionToken)
                 awsKeyValueStore.put("expiration", credentials.credentials.expiration.toString())
-                return true
             }
         } catch (e: Exception) {
-           e.printStackTrace()
+            throw Exception("Credentials generation failed")
         }
-        return false
     }
 
     /**
