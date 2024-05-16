@@ -1,14 +1,13 @@
 package software.amazon.location.auth
 
 import android.content.Context
-import com.amazonaws.internal.keyvaluestore.AWSKeyValueStore
 import software.amazon.location.auth.utils.Constants.API_KEY
 
 /**
  * Provides API key credentials for accessing services and manages their storage.
  */
 class ApiKeyCredentialsProvider {
-    private var awsKeyValueStore: AWSKeyValueStore? = null
+    private var securePreferences: EncryptedSharedPreferences? = null
 
     /**
      * Initializes the provider and saves the provided API key.
@@ -32,14 +31,13 @@ class ApiKeyCredentialsProvider {
     }
 
     private fun initialize(context: Context) {
-        awsKeyValueStore = AWSKeyValueStore(
-            context, "software.amazon.location.auth", true
-        )
+        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
+        securePreferences?.initEncryptedSharedPreferences()
     }
 
     private fun saveCredentials(apiKey: String) {
-        if (awsKeyValueStore === null) throw Exception("Not initialized")
-        awsKeyValueStore!!.put(API_KEY, apiKey)
+        if (securePreferences === null) throw Exception("Not initialized")
+        securePreferences!!.put(API_KEY, apiKey)
     }
 
     /**
@@ -48,14 +46,14 @@ class ApiKeyCredentialsProvider {
      * @throws Exception If the AWSKeyValueStore is not initialized.
      */
     fun getCachedCredentials(): String? {
-        if (awsKeyValueStore === null) throw Exception("Not initialized")
-        return awsKeyValueStore!!.get(API_KEY)
+        if (securePreferences === null) throw Exception("Not initialized")
+        return securePreferences!!.get(API_KEY)
     }
 
     /**
      * Clears the stored credentials.
      */
     fun clearCredentials() {
-        awsKeyValueStore?.clear()
+        securePreferences?.clear()
     }
 }

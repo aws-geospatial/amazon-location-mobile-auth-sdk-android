@@ -1,7 +1,6 @@
 package software.amazon.location.auth
 
 import android.content.Context
-import com.amazonaws.internal.keyvaluestore.AWSKeyValueStore
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -27,10 +26,13 @@ class CognitoCredentialsProviderTest {
     fun setUp() {
         context = mockk(relaxed = true)
 
-        mockkConstructor(AWSKeyValueStore::class)
-        every { anyConstructed<AWSKeyValueStore>().put(any(), any<String>()) } just runs
-        every { anyConstructed<AWSKeyValueStore>().get(any()) } returns null
-        every { anyConstructed<AWSKeyValueStore>().clear() } just runs
+        mockkConstructor(EncryptedSharedPreferences::class)
+        mockkConstructor(EncryptedSharedPreferences::class)
+
+        every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
+        every { anyConstructed<EncryptedSharedPreferences>().put(any(), any<String>()) } just runs
+        every { anyConstructed<EncryptedSharedPreferences>().get(any()) } returns null
+        every { anyConstructed<EncryptedSharedPreferences>().clear() } just runs
     }
 
     @Test
@@ -38,25 +40,25 @@ class CognitoCredentialsProviderTest {
         val credentials = Credentials("accessKeyId", 1234567890.0, "secretKey", "sessionToken")
 
         every {
-            anyConstructed<AWSKeyValueStore>().put(
+            anyConstructed<EncryptedSharedPreferences>().put(
                 ACCESS_KEY_ID,
                 credentials.accessKeyId
             )
         } just runs
         every {
-            anyConstructed<AWSKeyValueStore>().put(
+            anyConstructed<EncryptedSharedPreferences>().put(
                 SECRET_KEY,
                 credentials.secretKey
             )
         } just runs
         every {
-            anyConstructed<AWSKeyValueStore>().put(
+            anyConstructed<EncryptedSharedPreferences>().put(
                 SESSION_TOKEN,
                 credentials.sessionToken
             )
         } just runs
         every {
-            anyConstructed<AWSKeyValueStore>().put(
+            anyConstructed<EncryptedSharedPreferences>().put(
                 EXPIRATION,
                 credentials.expiration.toString()
             )
@@ -65,16 +67,16 @@ class CognitoCredentialsProviderTest {
         CognitoCredentialsProvider(context, credentials)
 
         verify {
-            anyConstructed<AWSKeyValueStore>().put(ACCESS_KEY_ID, credentials.accessKeyId)
-            anyConstructed<AWSKeyValueStore>().put(SECRET_KEY, credentials.secretKey)
-            anyConstructed<AWSKeyValueStore>().put(SESSION_TOKEN, credentials.sessionToken)
-            anyConstructed<AWSKeyValueStore>().put(EXPIRATION, credentials.expiration.toString())
+            anyConstructed<EncryptedSharedPreferences>().put(ACCESS_KEY_ID, credentials.accessKeyId)
+            anyConstructed<EncryptedSharedPreferences>().put(SECRET_KEY, credentials.secretKey)
+            anyConstructed<EncryptedSharedPreferences>().put(SESSION_TOKEN, credentials.sessionToken)
+            anyConstructed<EncryptedSharedPreferences>().put(EXPIRATION, credentials.expiration.toString())
         }
     }
 
     @Test
     fun `constructor without credentials throws when no credentials found`() {
-        every { anyConstructed<AWSKeyValueStore>().get(ACCESS_KEY_ID) } returns null
+        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns null
 
         assertFailsWith<Exception> {
             CognitoCredentialsProvider(context)
@@ -84,10 +86,10 @@ class CognitoCredentialsProviderTest {
     @Test
     fun `getCachedCredentials returns credentials when found`() {
         val credentials = Credentials("accessKeyId", 1234567890.0, "secretKey", "sessionToken")
-        every { anyConstructed<AWSKeyValueStore>().get(ACCESS_KEY_ID) } returns credentials.accessKeyId
-        every { anyConstructed<AWSKeyValueStore>().get(SECRET_KEY) } returns credentials.secretKey
-        every { anyConstructed<AWSKeyValueStore>().get(SESSION_TOKEN) } returns credentials.sessionToken
-        every { anyConstructed<AWSKeyValueStore>().get(EXPIRATION) } returns credentials.expiration.toString()
+        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns credentials.accessKeyId
+        every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns credentials.secretKey
+        every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns credentials.sessionToken
+        every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns credentials.expiration.toString()
 
         val provider = CognitoCredentialsProvider(context, credentials)
         val cachedCredentials = provider.getCachedCredentials()
@@ -97,10 +99,10 @@ class CognitoCredentialsProviderTest {
 
     @Test
     fun `getCachedCredentials returns null when not all credentials are found`() {
-        every { anyConstructed<AWSKeyValueStore>().get(ACCESS_KEY_ID) } returns "accessKeyId"
-        every { anyConstructed<AWSKeyValueStore>().get(SECRET_KEY) } returns null
-        every { anyConstructed<AWSKeyValueStore>().get(SESSION_TOKEN) } returns "sessionToken"
-        every { anyConstructed<AWSKeyValueStore>().get(EXPIRATION) } returns "1234567890.0"
+        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "accessKeyId"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns null
+        every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "sessionToken"
+        every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "1234567890.0"
 
         val provider = try {
             CognitoCredentialsProvider(context)
@@ -120,7 +122,7 @@ class CognitoCredentialsProviderTest {
             Credentials("accessKeyId", 1234567890.0, "secretKey", "sessionToken")
         )
 
-        every { anyConstructed<AWSKeyValueStore>().get(ACCESS_KEY_ID) } throws Exception("Not initialized")
+        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } throws Exception("Not initialized")
 
         assertFailsWith<Exception> {
             provider.getCachedCredentials()
@@ -136,6 +138,6 @@ class CognitoCredentialsProviderTest {
 
         provider.clearCredentials()
 
-        verify { anyConstructed<AWSKeyValueStore>().clear() }
+        verify { anyConstructed<EncryptedSharedPreferences>().clear() }
     }
 }
