@@ -18,7 +18,7 @@ class AuthHelper(private val context: Context) {
     suspend fun authenticateWithCognitoIdentityPool(
         identityPoolId: String,
     ): LocationCredentialsProvider {
-        return withContext(Dispatchers.Default) {
+        return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
                 context,
                 identityPoolId,
@@ -40,7 +40,7 @@ class AuthHelper(private val context: Context) {
         identityPoolId: String,
         region: String,
     ): LocationCredentialsProvider {
-        return withContext(Dispatchers.Default) {
+        return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
                 context,
                 identityPoolId,
@@ -61,7 +61,7 @@ class AuthHelper(private val context: Context) {
         identityPoolId: String,
         region: AwsRegions,
     ): LocationCredentialsProvider {
-        return withContext(Dispatchers.Default) {
+        return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
                 context,
                 identityPoolId,
