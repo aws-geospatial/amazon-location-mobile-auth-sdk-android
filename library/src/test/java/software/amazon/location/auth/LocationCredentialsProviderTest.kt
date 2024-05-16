@@ -118,7 +118,7 @@ class LocationCredentialsProviderTest {
         verify(exactly = 1) { anyConstructed<AWSKeyValueStore>().put("identityPoolId",
             TEST_IDENTITY_POOL_ID
         ) }
-        verify(exactly = 1) { anyConstructed<AWSKeyValueStore>().put("region", AwsRegions.US_EAST_1.name) }
+        verify(exactly = 1) { anyConstructed<AWSKeyValueStore>().put("region", AwsRegions.US_EAST_1.regionName) }
     }
 
     @Test
