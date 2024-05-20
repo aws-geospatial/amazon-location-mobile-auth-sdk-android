@@ -6,7 +6,7 @@ import com.amazonaws.auth.CognitoCachingCredentialsProvider
 import com.amazonaws.internal.keyvaluestore.AWSKeyValueStore
 import com.amazonaws.regions.Regions
 
-private const val PREFS_NAME = "software.amazon.location.auth"
+const val PREFS_NAME = "software.amazon.location.auth"
 
 /**
  * Provides credentials for accessing location-based services through Cognito or API key authentication.
@@ -79,6 +79,22 @@ class LocationCredentialsProvider {
             else -> {
                 throw Exception("No credentials found")
             }
+        }
+    }
+
+    suspend fun generateCredentials(identityPoolId: String, region: Regions) {
+        val cognitoCredentialsProvider = CognitoCredentialsProvider(region.getName())
+        try {
+            val identityId = cognitoCredentialsProvider.getIdentityId(identityPoolId)
+            if (identityId.isNotEmpty()) {
+                val credentials = cognitoCredentialsProvider.getCredentials(identityId)
+                awsKeyValueStore.put("accessKeyId", credentials.credentials.accessKeyId)
+                awsKeyValueStore.put("secretKey", credentials.credentials.secretKey)
+                awsKeyValueStore.put("sessionToken", credentials.credentials.sessionToken)
+                awsKeyValueStore.put("expiration", credentials.credentials.expiration.toString())
+            }
+        } catch (e: Exception) {
+            throw Exception("Credentials generation failed")
         }
     }
 
