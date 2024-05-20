@@ -2,7 +2,6 @@ package software.amazon.location.auth
 
 
 import android.content.Context
-import com.amazonaws.internal.keyvaluestore.AWSKeyValueStore
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -28,15 +27,16 @@ class AwsSignerInterceptor(
     private val credentialsProvider: Credentials?
 ) : Interceptor {
 
-    private lateinit var awsKeyValueStore: AWSKeyValueStore
+    private lateinit var securePreferences: EncryptedSharedPreferences
     private val sdfMap = HashMap<String, SimpleDateFormat>()
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
+        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
+        securePreferences.initEncryptedSharedPreferences()
         val accessKeyId = credentialsProvider?.accessKeyId
         val secretKey = credentialsProvider?.secretKey
         val sessionToken = credentialsProvider?.sessionToken
-        val region = awsKeyValueStore.get(REGION)
+        val region = securePreferences.get(REGION)
         val originalRequest = chain.request()
         if (!accessKeyId.isNullOrEmpty() && !secretKey.isNullOrEmpty() && !sessionToken.isNullOrEmpty() && !region.isNullOrEmpty() && originalRequest.url.host.contains("amazonaws.com")) {
             val dateMilli = Date().time

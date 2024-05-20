@@ -13,7 +13,6 @@ import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mock
 import software.amazon.location.auth.utils.CognitoCredentialsClient
 import software.amazon.location.auth.utils.Constants.JSON
 import software.amazon.location.auth.utils.Constants.JSON_2
@@ -21,17 +20,9 @@ import software.amazon.location.auth.utils.Constants.JSON_2
 
 class CognitoCredentialsClientTest {
     private lateinit var cognitoCredentialsClient: CognitoCredentialsClient
-
-    @Mock
     private lateinit var mockClient: OkHttpClient
-
-    @Mock
     private lateinit var mockCall: Call
-
-    @Mock
     private lateinit var mockResponse: Response
-
-    @Mock
     lateinit var context: Context
 
     @Before

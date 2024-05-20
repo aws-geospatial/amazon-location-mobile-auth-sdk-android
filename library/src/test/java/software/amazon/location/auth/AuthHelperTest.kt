@@ -1,7 +1,11 @@
 package software.amazon.location.auth
 
 import android.content.Context
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkConstructor
+import io.mockk.runs
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertNotNull
@@ -22,6 +26,12 @@ class AuthHelperTest {
     fun setUp() {
         context = mockk(relaxed = true)
         authHelper = AuthHelper(context)
+        mockkConstructor(EncryptedSharedPreferences::class)
+
+        every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
+        every { anyConstructed<EncryptedSharedPreferences>().put(any(), any<String>()) } just runs
+        every { anyConstructed<EncryptedSharedPreferences>().get("region") } returns "us-east-1"
+        every { anyConstructed<EncryptedSharedPreferences>().clear() } just runs
     }
 
     @Test

@@ -1,7 +1,6 @@
 package software.amazon.location.auth
 
 import android.content.Context
-import com.amazonaws.internal.keyvaluestore.AWSKeyValueStore
 import software.amazon.location.auth.data.response.Credentials
 import software.amazon.location.auth.utils.AwsRegions
 import software.amazon.location.auth.utils.CognitoCredentialsClient
@@ -19,7 +18,7 @@ class LocationCredentialsProvider {
     private var context: Context
     private var cognitoCredentialsProvider: CognitoCredentialsProvider? = null
     private var apiKeyProvider: ApiKeyCredentialsProvider? = null
-    private var awsKeyValueStore: AWSKeyValueStore
+    private var securePreferences: EncryptedSharedPreferences
 
     /**
      * Initializes with Cognito credentials.
@@ -29,10 +28,11 @@ class LocationCredentialsProvider {
      */
     constructor(context: Context, identityPoolId: String, region: AwsRegions) {
         this.context = context
-        awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
-        awsKeyValueStore.put(METHOD, "cognito")
-        awsKeyValueStore.put(IDENTITY_POOL_ID, identityPoolId)
-        awsKeyValueStore.put(REGION, region.regionName)
+        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
+        securePreferences.initEncryptedSharedPreferences()
+        securePreferences.put(METHOD, "cognito")
+        securePreferences.put(IDENTITY_POOL_ID, identityPoolId)
+        securePreferences.put(REGION, region.regionName)
     }
 
     /**
@@ -42,9 +42,10 @@ class LocationCredentialsProvider {
      */
     constructor(context: Context, apiKey: String) {
         this.context = context
-        awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
-        awsKeyValueStore.put(METHOD, "apiKey")
-        awsKeyValueStore.put(API_KEY, apiKey)
+        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
+        securePreferences.initEncryptedSharedPreferences()
+        securePreferences.put(METHOD, "apiKey")
+        securePreferences.put(API_KEY, apiKey)
         apiKeyProvider = ApiKeyCredentialsProvider(context, apiKey)
     }
 
@@ -55,19 +56,20 @@ class LocationCredentialsProvider {
      */
     constructor(context: Context) {
         this.context = context
-        awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
-        val method = awsKeyValueStore.get(METHOD)
+        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
+        securePreferences.initEncryptedSharedPreferences()
+        val method = securePreferences.get(METHOD)
         if (method === null) throw Exception("No credentials found")
         when (method) {
             "cognito" -> {
-                val identityPoolId = awsKeyValueStore.get(IDENTITY_POOL_ID)
-                val region = awsKeyValueStore.get(REGION)
+                val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
+                val region = securePreferences.get(REGION)
                 if (identityPoolId === null || region === null) throw Exception("No credentials found")
                 cognitoCredentialsProvider = CognitoCredentialsProvider(context)
             }
 
             "apiKey" -> {
-                val apiKey = awsKeyValueStore.get(API_KEY)
+                val apiKey = securePreferences.get(API_KEY)
                 if (apiKey === null) throw Exception("No credentials found")
                 apiKeyProvider = ApiKeyCredentialsProvider(context, apiKey)
             }
@@ -88,8 +90,8 @@ class LocationCredentialsProvider {
      * @return True if the credentials were successfully generated and stored, false otherwise.
      */
     suspend fun generateCredentials() {
-        val identityPoolId = awsKeyValueStore.get(IDENTITY_POOL_ID)
-        val region = awsKeyValueStore.get(REGION)
+        val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
+        val region = securePreferences.get(REGION)
         if (identityPoolId === null || region === null) throw Exception("No credentials found")
         val cognitoCredentialsHttpHelper = CognitoCredentialsClient(region)
         try {
