@@ -13,16 +13,19 @@ import java.util.Locale
 import java.util.TimeZone
 import okhttp3.Interceptor
 import okhttp3.Response
+import software.amazon.location.auth.data.response.Credentials
 import software.amazon.location.auth.utils.Constants.HEADER_HOST
 import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_CONTENT_SHA256
 import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_DATE
 import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_SECURITY_TOKEN
+import software.amazon.location.auth.utils.Constants.REGION
 import software.amazon.location.auth.utils.Constants.TIME_PATTERN
 import software.amazon.location.auth.utils.signed
 
-open class AwsSignerInterceptor(
+class AwsSignerInterceptor(
     private val context: Context,
-    private val serviceName: String
+    private val serviceName: String,
+    private val credentialsProvider: Credentials?
 ) : Interceptor {
 
     private lateinit var awsKeyValueStore: AWSKeyValueStore
@@ -30,10 +33,10 @@ open class AwsSignerInterceptor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
-        val accessKeyId = awsKeyValueStore.get("accessKeyId")
-        val secretKey = awsKeyValueStore.get("secretKey")
-        val sessionToken = awsKeyValueStore.get("sessionToken")
-        val region = awsKeyValueStore.get("region")
+        val accessKeyId = credentialsProvider?.accessKeyId
+        val secretKey = credentialsProvider?.secretKey
+        val sessionToken = credentialsProvider?.sessionToken
+        val region = awsKeyValueStore.get(REGION)
         val originalRequest = chain.request()
         if (!accessKeyId.isNullOrEmpty() && !secretKey.isNullOrEmpty() && !sessionToken.isNullOrEmpty() && !region.isNullOrEmpty() && originalRequest.url.host.contains("amazonaws.com")) {
             val dateMilli = Date().time

@@ -6,6 +6,7 @@ import okio.Buffer
 import java.net.URLEncoder
 import java.util.Locale
 import software.amazon.location.auth.utils.Constants.HEADER_AUTHORIZATION
+import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_DATE
 
 internal const val SIGNING_ALGORITHM = "AWS4-HMAC-SHA256"
 
@@ -17,8 +18,8 @@ internal fun Request.signed(accessKeyId: String, accessKey: String, region: Stri
         .header(HEADER_AUTHORIZATION, awsAuthorizationHeader(accessKeyId, accessKey, region, service))
         .build()
 
-internal fun Request.awsAuthorizationHeader(accesKeyId: String, accessKey: String, region: String, service: String) =
-    "$SIGNING_ALGORITHM Credential=$accesKeyId/${credentialScope(
+internal fun Request.awsAuthorizationHeader(accessKeyId: String, accessKey: String, region: String, service: String) =
+    "$SIGNING_ALGORITHM Credential=$accessKeyId/${credentialScope(
         region,
         service
     )}, SignedHeaders=${signedHeaders()}, Signature=${signature(
@@ -88,11 +89,11 @@ private fun Request.bodyDigest() =
     hash(bodyAsString()).lowercase(Locale.ENGLISH)
 
 private fun Request.amazonDateHeader() =
-    header("x-amz-date")
+    header(HEADER_X_AMZ_DATE)
         ?: throw NoSuchFieldException("Request cannot be signed without having the x-amz-date header")
 
 private fun Request.amazonDateHeaderShort() =
-    header("x-amz-date")?.substring(0..7)
+    header(HEADER_X_AMZ_DATE)?.substring(0..7)
         ?: throw NoSuchFieldException("Request cannot be signed without having the x-amz-date header")
 
 private fun Request.bodyAsString() =

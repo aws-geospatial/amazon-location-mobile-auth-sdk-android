@@ -73,10 +73,7 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.10.0")
-
     implementation("com.amazonaws:aws-android-sdk-mobile-client:2.73.0")
-    implementation("com.amazonaws:aws-android-sdk-auth-userpools:2.73.0")
-    implementation("com.amazonaws:aws-android-sdk-location:2.72.0")
     implementation("com.squareup.okhttp3:okhttp:4.9.2")
 
     testImplementation("junit:junit:4.13.2")

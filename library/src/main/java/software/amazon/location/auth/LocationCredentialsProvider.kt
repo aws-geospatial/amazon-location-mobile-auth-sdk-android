@@ -1,10 +1,14 @@
 package software.amazon.location.auth
 
 import android.content.Context
-import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.auth.CognitoCachingCredentialsProvider
 import com.amazonaws.internal.keyvaluestore.AWSKeyValueStore
-import com.amazonaws.regions.Regions
+import software.amazon.location.auth.data.response.Credentials
+import software.amazon.location.auth.utils.AwsRegions
+import software.amazon.location.auth.utils.CognitoCredentialsClient
+import software.amazon.location.auth.utils.Constants.API_KEY
+import software.amazon.location.auth.utils.Constants.IDENTITY_POOL_ID
+import software.amazon.location.auth.utils.Constants.METHOD
+import software.amazon.location.auth.utils.Constants.REGION
 
 const val PREFS_NAME = "software.amazon.location.auth"
 
@@ -12,7 +16,8 @@ const val PREFS_NAME = "software.amazon.location.auth"
  * Provides credentials for accessing location-based services through Cognito or API key authentication.
  */
 class LocationCredentialsProvider {
-    private var cognitoProvider: CognitoCachingCredentialsProvider? = null
+    private var context: Context
+    private var cognitoCredentialsProvider: CognitoCredentialsProvider? = null
     private var apiKeyProvider: ApiKeyCredentialsProvider? = null
     private var awsKeyValueStore: AWSKeyValueStore
 
@@ -22,19 +27,12 @@ class LocationCredentialsProvider {
      * @param identityPoolId The identity pool ID for Cognito authentication.
      * @param region The region for Cognito authentication.
      */
-    constructor(context: Context, identityPoolId: String, region: Regions) {
+    constructor(context: Context, identityPoolId: String, region: AwsRegions) {
+        this.context = context
         awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
-        val cognitoCachingCredentialsProvider = CognitoCachingCredentialsProvider(
-            context,
-            identityPoolId,
-            region
-        )
-        cognitoCachingCredentialsProvider.sessionDuration = 3600
-        cognitoCachingCredentialsProvider.refreshThreshold = 60
-        cognitoProvider = cognitoCachingCredentialsProvider
-        awsKeyValueStore.put("method", "cognito")
-        awsKeyValueStore.put("identityPoolId", identityPoolId)
-        awsKeyValueStore.put("region", region.getName())
+        awsKeyValueStore.put(METHOD, "cognito")
+        awsKeyValueStore.put(IDENTITY_POOL_ID, identityPoolId)
+        awsKeyValueStore.put(REGION, region.regionName)
     }
 
     /**
@@ -43,9 +41,10 @@ class LocationCredentialsProvider {
      * @param apiKey The API key for authentication.
      */
     constructor(context: Context, apiKey: String) {
+        this.context = context
         awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
-        awsKeyValueStore.put("method", "apiKey")
-        awsKeyValueStore.put("apiKey", apiKey)
+        awsKeyValueStore.put(METHOD, "apiKey")
+        awsKeyValueStore.put(API_KEY, apiKey)
         apiKeyProvider = ApiKeyCredentialsProvider(context, apiKey)
     }
 
@@ -55,23 +54,20 @@ class LocationCredentialsProvider {
      * @throws Exception If API key credentials are not found.
      */
     constructor(context: Context) {
+        this.context = context
         awsKeyValueStore = AWSKeyValueStore(context, PREFS_NAME, true)
-        val method = awsKeyValueStore.get("method")
+        val method = awsKeyValueStore.get(METHOD)
         if (method === null) throw Exception("No credentials found")
         when (method) {
             "cognito" -> {
-                val identityPoolId = awsKeyValueStore.get("identityPoolId")
-                val region = awsKeyValueStore.get("region")
+                val identityPoolId = awsKeyValueStore.get(IDENTITY_POOL_ID)
+                val region = awsKeyValueStore.get(REGION)
                 if (identityPoolId === null || region === null) throw Exception("No credentials found")
-                cognitoProvider = CognitoCachingCredentialsProvider(
-                    context,
-                    identityPoolId,
-                    Regions.fromName(region)
-                )
+                cognitoCredentialsProvider = CognitoCredentialsProvider(context)
             }
 
             "apiKey" -> {
-                val apiKey = awsKeyValueStore.get("apiKey")
+                val apiKey = awsKeyValueStore.get(API_KEY)
                 if (apiKey === null) throw Exception("No credentials found")
                 apiKeyProvider = ApiKeyCredentialsProvider(context, apiKey)
             }
@@ -82,16 +78,25 @@ class LocationCredentialsProvider {
         }
     }
 
-    suspend fun generateCredentials(identityPoolId: String, region: Regions) {
-        val cognitoCredentialsProvider = CognitoCredentialsProvider(region.getName())
+    /**
+     * Generates and stores AWS credentials.
+     *
+     * This function fetches the identity pool ID and region from the key-value store,
+     * uses these to retrieve an identity ID and credentials from AWS Cognito, and then
+     * stores these credentials using a CognitoCredentialsProvider.
+     *
+     * @return True if the credentials were successfully generated and stored, false otherwise.
+     */
+    suspend fun generateCredentials() {
+        val identityPoolId = awsKeyValueStore.get(IDENTITY_POOL_ID)
+        val region = awsKeyValueStore.get(REGION)
+        if (identityPoolId === null || region === null) throw Exception("No credentials found")
+        val cognitoCredentialsHttpHelper = CognitoCredentialsClient(region)
         try {
-            val identityId = cognitoCredentialsProvider.getIdentityId(identityPoolId)
+            val identityId = cognitoCredentialsHttpHelper.getIdentityId(identityPoolId)
             if (identityId.isNotEmpty()) {
-                val credentials = cognitoCredentialsProvider.getCredentials(identityId)
-                awsKeyValueStore.put("accessKeyId", credentials.credentials.accessKeyId)
-                awsKeyValueStore.put("secretKey", credentials.credentials.secretKey)
-                awsKeyValueStore.put("sessionToken", credentials.credentials.sessionToken)
-                awsKeyValueStore.put("expiration", credentials.credentials.expiration.toString())
+                val credentials = cognitoCredentialsHttpHelper.getCredentials(identityId)
+                cognitoCredentialsProvider = CognitoCredentialsProvider(context, credentials.credentials)
             }
         } catch (e: Exception) {
             throw Exception("Credentials generation failed")
@@ -99,13 +104,13 @@ class LocationCredentialsProvider {
     }
 
     /**
-     * Retrieves the Cognito credentials provider.
-     * @return The CognitoCachingCredentialsProvider instance.
+     * Retrieves the Cognito credentials.
+     * @return The Credentials instance.
      * @throws Exception If the Cognito provider is not initialized.
      */
-    fun getCredentialsProvider(): AWSCredentialsProvider {
-        if (cognitoProvider === null) throw Exception("Cognito credentials not initialized")
-        return cognitoProvider!!
+    fun getCredentialsProvider(): Credentials {
+        if (cognitoCredentialsProvider === null) throw Exception("Cognito credentials not initialized")
+        return cognitoCredentialsProvider?.getCachedCredentials()!!
     }
 
     /**
@@ -122,9 +127,10 @@ class LocationCredentialsProvider {
      * Refreshes the Cognito credentials.
      * @throws Exception If the Cognito provider is not initialized or if called for API key authentication.
      */
-    fun refresh() {
-        if (cognitoProvider === null) throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
-        cognitoProvider!!.refresh()
+    suspend fun refresh() {
+        if (cognitoCredentialsProvider === null) throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
+        cognitoCredentialsProvider?.clearCredentials()
+        generateCredentials()
     }
 
     /**
@@ -132,7 +138,7 @@ class LocationCredentialsProvider {
      * @throws Exception If the Cognito provider is not initialized or if called for API key authentication.
      */
     fun clear() {
-        if (cognitoProvider === null) throw Exception("Clear is only supported for Cognito credentials. Make sure to use the cognito constructor.")
-        cognitoProvider!!.clear()
+        if (cognitoCredentialsProvider === null) throw Exception("Clear is only supported for Cognito credentials. Make sure to use the cognito constructor.")
+        cognitoCredentialsProvider?.clearCredentials()
     }
 }

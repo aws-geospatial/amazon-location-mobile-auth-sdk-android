@@ -2,8 +2,7 @@ package software.amazon.location.auth
 
 import android.content.Context
 import com.amazonaws.internal.keyvaluestore.AWSKeyValueStore
-
-private const val API_KEY = "apiKey"
+import software.amazon.location.auth.utils.Constants.API_KEY
 
 /**
  * Provides API key credentials for accessing services and manages their storage.
