@@ -79,7 +79,7 @@ class LocationCredentialsProviderTest {
         every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
         val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         coroutineScope.launch {
-            provider.generateCredentials()
+            provider.checkCredentials()
             assertNotNull(provider.getCredentialsProvider())
         }
     }
@@ -94,7 +94,7 @@ class LocationCredentialsProviderTest {
     fun `clear successfully clears cognito credentials`() {
         val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         coroutineScope.launch {
-            provider.generateCredentials()
+            provider.checkCredentials()
             provider.clear()
         }
     }
@@ -139,7 +139,7 @@ class LocationCredentialsProviderTest {
     fun `refresh throws if Cognito provider not initialized`() {
         val provider = LocationCredentialsProvider(context, "apiKey")
         coroutineScope.launch {
-            provider.generateCredentials()
+            provider.checkCredentials()
             assertFailsWith<Exception> { provider.refresh() }
         }
     }

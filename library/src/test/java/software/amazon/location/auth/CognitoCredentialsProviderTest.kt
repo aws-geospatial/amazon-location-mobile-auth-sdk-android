@@ -33,6 +33,7 @@ class CognitoCredentialsProviderTest {
         every { anyConstructed<EncryptedSharedPreferences>().put(any(), any<String>()) } just runs
         every { anyConstructed<EncryptedSharedPreferences>().get(any()) } returns null
         every { anyConstructed<EncryptedSharedPreferences>().clear() } just runs
+        every { anyConstructed<EncryptedSharedPreferences>().remove(any()) } just runs
     }
 
     @Test
@@ -138,6 +139,6 @@ class CognitoCredentialsProviderTest {
 
         provider.clearCredentials()
 
-        verify { anyConstructed<EncryptedSharedPreferences>().clear() }
+        verify { anyConstructed<EncryptedSharedPreferences>().remove(any()) }
     }
 }
