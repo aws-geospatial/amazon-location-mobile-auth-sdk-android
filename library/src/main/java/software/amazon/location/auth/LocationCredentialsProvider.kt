@@ -1,6 +1,7 @@
 package software.amazon.location.auth
 
 import android.content.Context
+import java.util.Date
 import software.amazon.location.auth.data.response.Credentials
 import software.amazon.location.auth.utils.AwsRegions
 import software.amazon.location.auth.utils.CognitoCredentialsClient
@@ -93,6 +94,25 @@ class LocationCredentialsProvider {
         val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
         val region = securePreferences.get(REGION)
         if (identityPoolId === null || region === null) throw Exception("No credentials found")
+        val isCredentialsAvailable = try {
+            cognitoCredentialsProvider = CognitoCredentialsProvider(context)
+            true
+        } catch (e: Exception) {
+            false
+        }
+        if (!isCredentialsAvailable) {
+            generateNewCredentials(region, identityPoolId)
+        } else {
+            val credentials = cognitoCredentialsProvider?.getCachedCredentials()
+            credentials?.let {
+                if (!isCredentialsValid(it)) {
+                    generateNewCredentials(region, identityPoolId)
+                }
+            }
+        }
+    }
+
+    private suspend fun generateNewCredentials(region: String, identityPoolId: String) {
         val cognitoCredentialsHttpHelper = CognitoCredentialsClient(region)
         try {
             val identityId = cognitoCredentialsHttpHelper.getIdentityId(identityPoolId)
@@ -103,6 +123,13 @@ class LocationCredentialsProvider {
         } catch (e: Exception) {
             throw Exception("Credentials generation failed")
         }
+    }
+
+    private fun isCredentialsValid(credentials: Credentials): Boolean {
+        val expirationTime = credentials.expiration.toLong() * 1000
+        val expirationDate = Date(expirationTime)
+        val currentDate = Date()
+        return currentDate.before(expirationDate)
     }
 
     /**
