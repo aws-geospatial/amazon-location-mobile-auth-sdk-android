@@ -74,6 +74,10 @@ class CognitoCredentialsProvider {
      * Clears all credentials from the key-value store.
      */
     fun clearCredentials() {
-        securePreferences?.clear()
+        if (securePreferences === null) throw Exception("Not initialized")
+        securePreferences?.remove(ACCESS_KEY_ID)
+        securePreferences?.remove(SECRET_KEY)
+        securePreferences?.remove(SESSION_TOKEN)
+        securePreferences?.remove(EXPIRATION)
     }
 }

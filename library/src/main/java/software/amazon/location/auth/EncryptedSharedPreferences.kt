@@ -75,4 +75,16 @@ class EncryptedSharedPreferences(private val context: Context, private val prefe
         if (sharedPreferences === null) throw Exception("SharedPreferences not initialized")
         sharedPreferences!!.edit().clear().apply()
     }
+
+    /**
+     * Removes a particular key from the encrypted preferences.
+     * @param key The key to remove.
+     * @throws Exception if preferences are not initialized.
+     */
+    fun remove(key: String) {
+        if (sharedPreferences === null) throw Exception("SharedPreferences not initialized")
+        val editor = sharedPreferences!!.edit()
+        editor.remove(key)
+        editor.apply()
+    }
 }
