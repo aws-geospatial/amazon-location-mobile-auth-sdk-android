@@ -1,6 +1,7 @@
 package software.amazon.location.auth
 
 import android.content.Context
+import java.util.Date
 import software.amazon.location.auth.data.response.Credentials
 import software.amazon.location.auth.utils.AwsRegions
 import software.amazon.location.auth.utils.CognitoCredentialsClient
@@ -81,18 +82,49 @@ class LocationCredentialsProvider {
     }
 
     /**
-     * Generates and stores AWS credentials.
+     * check AWS credentials.
      *
-     * This function fetches the identity pool ID and region from the key-value store,
-     * uses these to retrieve an identity ID and credentials from AWS Cognito, and then
-     * stores these credentials using a CognitoCredentialsProvider.
+     * This function retrieves the identity pool ID and region from a secure preferences
      *
-     * @return True if the credentials were successfully generated and stored, false otherwise.
+     * The function first attempts to initialize the CognitoCredentialsProvider. If it fails
+     * or if there are no cached credentials or if the cached credentials are invalid, it
+     * generates new credentials.
+     *
+     * @throws Exception if the identity pool ID or region is not found, or if credential generation fails.
      */
-    suspend fun generateCredentials() {
+    suspend fun checkCredentials() {
         val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
         val region = securePreferences.get(REGION)
         if (identityPoolId === null || region === null) throw Exception("No credentials found")
+        val isCredentialsAvailable = try {
+            cognitoCredentialsProvider = CognitoCredentialsProvider(context)
+            true
+        } catch (e: Exception) {
+            false
+        }
+        if (!isCredentialsAvailable) {
+            generateCredentials(region, identityPoolId)
+        } else {
+            val credentials = cognitoCredentialsProvider?.getCachedCredentials()
+            credentials?.let {
+                if (!isCredentialsValid(it)) {
+                    generateCredentials(region, identityPoolId)
+                }
+            }
+        }
+    }
+
+    /**
+     * Generates new AWS credentials using the specified region and identity pool ID.
+     *
+     * This function uses CognitoCredentialsClient to fetch the identity ID and credentials,
+     * and then initializes the CognitoCredentialsProvider with the retrieved credentials.
+     *
+     * @param region The AWS region where the identity pool is located.
+     * @param identityPoolId The identity pool ID for Cognito.
+     * @throws Exception if the credential generation fails.
+     */
+    private suspend fun generateCredentials(region: String, identityPoolId: String) {
         val cognitoCredentialsHttpHelper = CognitoCredentialsClient(region)
         try {
             val identityId = cognitoCredentialsHttpHelper.getIdentityId(identityPoolId)
@@ -103,6 +135,21 @@ class LocationCredentialsProvider {
         } catch (e: Exception) {
             throw Exception("Credentials generation failed")
         }
+    }
+
+    /**
+     * Checks if the provided credentials are still valid.
+     *
+     * This function compares the current date with the expiration date of the credentials.
+     *
+     * @param credentials The AWS credentials to validate.
+     * @return True if the credentials are valid (i.e., not expired), false otherwise.
+     */
+    private fun isCredentialsValid(credentials: Credentials): Boolean {
+        val expirationTime = credentials.expiration.toLong() * 1000
+        val expirationDate = Date(expirationTime)
+        val currentDate = Date()
+        return currentDate.before(expirationDate)
     }
 
     /**
@@ -132,7 +179,7 @@ class LocationCredentialsProvider {
     suspend fun refresh() {
         if (cognitoCredentialsProvider === null) throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
         cognitoCredentialsProvider?.clearCredentials()
-        generateCredentials()
+        checkCredentials()
     }
 
     /**
