@@ -16,7 +16,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import software.amazon.location.auth.utils.AwsRegions
 import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
+import software.amazon.location.auth.utils.Constants.API_KEY
 import software.amazon.location.auth.utils.Constants.EXPIRATION
+import software.amazon.location.auth.utils.Constants.IDENTITY_POOL_ID
+import software.amazon.location.auth.utils.Constants.METHOD
+import software.amazon.location.auth.utils.Constants.REGION
 import software.amazon.location.auth.utils.Constants.SECRET_KEY
 import software.amazon.location.auth.utils.Constants.SESSION_TOKEN
 
@@ -34,13 +38,13 @@ class LocationCredentialsProviderTest {
 
         every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
         every { anyConstructed<EncryptedSharedPreferences>().put(any(), any<String>()) } just runs
-        every { anyConstructed<EncryptedSharedPreferences>().get("region") } returns "us-east-1"
+        every { anyConstructed<EncryptedSharedPreferences>().get(REGION) } returns "us-east-1"
         every { anyConstructed<EncryptedSharedPreferences>().clear() } just runs
     }
 
     @Test
     fun `constructor with Cognito initializes correctly`() {
-        every { anyConstructed<EncryptedSharedPreferences>().get("method") } returns "api"
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "api"
         val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         assertNotNull(provider)
     }
@@ -53,20 +57,20 @@ class LocationCredentialsProviderTest {
 
     @Test
     fun `constructor with cached credentials for Cognito initializes correctly`() {
-        every { anyConstructed<EncryptedSharedPreferences>().get("method") } returns "cognito"
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
         every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
-        every { anyConstructed<EncryptedSharedPreferences>().get("identityPoolId") } returns TEST_IDENTITY_POOL_ID
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
         val provider = LocationCredentialsProvider(context)
         assertNotNull(provider)
     }
 
     @Test
     fun `constructor with cached credentials for API key initializes correctly`() {
-        every { anyConstructed<EncryptedSharedPreferences>().get("method") } returns "apiKey"
-        every { anyConstructed<EncryptedSharedPreferences>().get("apiKey") } returns TEST_API_KEY
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "apiKey"
+        every { anyConstructed<EncryptedSharedPreferences>().get(API_KEY) } returns TEST_API_KEY
         val provider = LocationCredentialsProvider(context)
         assertNotNull(provider)
     }
@@ -92,6 +96,12 @@ class LocationCredentialsProviderTest {
 
     @Test
     fun `clear successfully clears cognito credentials`() {
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
+        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
         val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         coroutineScope.launch {
             provider.checkCredentials()
@@ -100,27 +110,37 @@ class LocationCredentialsProviderTest {
     }
 
     @Test
+    fun `check credentials`() {
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
+        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        coroutineScope.launch {
+            provider.checkCredentials()
+        }
+    }
+
+    @Test
     fun `constructor with cached cognito credentials throws exception on missing data`() {
-        every { anyConstructed<EncryptedSharedPreferences>().get("method") } returns "cognito"
-        every { anyConstructed<EncryptedSharedPreferences>().get("identityPoolId") } returns null // Simulate missing data
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns null // Simulate missing data
         assertFailsWith<Exception> { LocationCredentialsProvider(context) }
     }
 
     @Test
     fun `constructor with cached API key credentials throws exception on missing data`() {
-        every { anyConstructed<EncryptedSharedPreferences>().get("method") } returns "apiKey"
-        every { anyConstructed<EncryptedSharedPreferences>().get("apiKey") } returns null // Simulate missing data
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "apiKey"
+        every { anyConstructed<EncryptedSharedPreferences>().get(API_KEY) } returns null // Simulate missing data
         assertFailsWith<Exception> { LocationCredentialsProvider(context) }
     }
 
     @Test
     fun `verify SecurePreferences interactions for cognito initialization`() {
         LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
-        verify(exactly = 1) { anyConstructed<EncryptedSharedPreferences>().put("method", "cognito") }
-        verify(exactly = 1) { anyConstructed<EncryptedSharedPreferences>().put("identityPoolId",
+        verify(exactly = 1) { anyConstructed<EncryptedSharedPreferences>().put(METHOD, "cognito") }
+        verify(exactly = 1) { anyConstructed<EncryptedSharedPreferences>().put(IDENTITY_POOL_ID,
             TEST_IDENTITY_POOL_ID
         ) }
-        verify(exactly = 1) { anyConstructed<EncryptedSharedPreferences>().put("region", AwsRegions.US_EAST_1.regionName) }
+        verify(exactly = 1) { anyConstructed<EncryptedSharedPreferences>().put(REGION, AwsRegions.US_EAST_1.regionName) }
     }
 
     @Test
