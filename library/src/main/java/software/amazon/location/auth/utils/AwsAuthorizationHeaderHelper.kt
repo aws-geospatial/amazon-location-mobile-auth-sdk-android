@@ -5,45 +5,52 @@ import okhttp3.Request
 import okio.Buffer
 import java.net.URLEncoder
 import java.util.Locale
-import software.amazon.location.auth.utils.Constants.HEADER_AUTHORIZATION
-import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_DATE
-
-internal const val SIGNING_ALGORITHM = "AWS4-HMAC-SHA256"
+import software.amazon.location.auth.utils.Constants.SIGNING_ALGORITHM
 
 /**
  * Sign the request with the aws authorization header
  */
-internal fun Request.signed(accessKeyId: String, accessKey: String, region: String, service: String) =
-    newBuilder()
-        .header(HEADER_AUTHORIZATION, awsAuthorizationHeader(accessKeyId, accessKey, region, service))
-        .build()
-
-internal fun Request.awsAuthorizationHeader(accessKeyId: String, accessKey: String, region: String, service: String) =
-    "$SIGNING_ALGORITHM Credential=$accessKeyId/${credentialScope(
-        region,
-        service
-    )}, SignedHeaders=${signedHeaders()}, Signature=${signature(
+internal fun Request.awsAuthorizationHeader(
+    accessKeyId: String,
+    accessKey: String,
+    region: String,
+    service: String,
+    time: String
+) =
+    "$SIGNING_ALGORITHM Credential=$accessKeyId/${
+        credentialScope(
+            region,
+            service,
+            time
+        )
+    }, SignedHeaders=${signedHeaders()}, Signature=${signature(
         accessKey,
         region,
-        service
+        service,
+        time
     )}"
 
-internal fun Request.signature(accessKey: String, region: String, service: String) =
+internal fun Request.signature(
+    accessKey: String,
+    region: String,
+    service: String,
+    time: String
+) =
     hmacSha256(
         hmacSha256(
             hmacSha256(
-                hmacSha256(hmacSha256("AWS4$accessKey", amazonDateHeaderShort()), region),
+                hmacSha256(hmacSha256("AWS4$accessKey", amazonDateHeaderShort(time)), region),
                 service
             ), "aws4_request"
         ),
-        stringToSign(region, service)
+        stringToSign(region, service, time)
     ).toHexString()
 
-internal fun Request.stringToSign(region: String, service: String) =
+internal fun Request.stringToSign(region: String, service: String, time: String) =
     """
     |$SIGNING_ALGORITHM
-    |${amazonDateHeader()}
-    |${credentialScope(region, service)}
+    |${time}
+    |${credentialScope(region, service, time)}
     |${hash(canonicalRequest())}
     """.trimMargin("|")
 
@@ -58,8 +65,9 @@ internal fun Request.canonicalRequest() =
     |${bodyDigest()}
     """.trimMargin("|")
 
-private fun Request.canonicalUri() =
-    url.encodedPath.replace(Regex("/+"), "/")
+private fun Request.canonicalUri():String {
+    return urlEncode(url.encodedPath, true)
+}
 
 private fun Request.canonicalQueryString() =
     url.queryParameterNames.sorted()
@@ -79,7 +87,7 @@ private fun Request.canonicalQueryString() =
 
 private fun Request.canonicalHeaders() = headers.canonicalHeaders()
 
-private fun Request.signedHeaders() =
+fun Request.signedHeaders() =
     headers.names()
         .map { it.trim().lowercase(Locale.ENGLISH) }
         .sorted()
@@ -88,13 +96,8 @@ private fun Request.signedHeaders() =
 private fun Request.bodyDigest() =
     hash(bodyAsString()).lowercase(Locale.ENGLISH)
 
-private fun Request.amazonDateHeader() =
-    header(HEADER_X_AMZ_DATE)
-        ?: throw NoSuchFieldException("Request cannot be signed without having the x-amz-date header")
-
-private fun Request.amazonDateHeaderShort() =
-    header(HEADER_X_AMZ_DATE)?.substring(0..7)
-        ?: throw NoSuchFieldException("Request cannot be signed without having the x-amz-date header")
+private fun amazonDateHeaderShort(time: String) =
+   time.substring(0..7)
 
 private fun Request.bodyAsString() =
     body?.let {
@@ -118,5 +121,5 @@ private fun String.rfc3986Encode() =
         .replace("*", "%2A")
         .replace("%7E", "~")
 
-private fun Request.credentialScope(region: String, service: String) =
-    "${amazonDateHeaderShort()}/$region/$service/aws4_request"
+fun credentialScope(region: String, service: String, time: String) =
+    "${amazonDateHeaderShort(time)}/$region/$service/aws4_request"
