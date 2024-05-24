@@ -12,7 +12,7 @@ import junit.framework.TestCase.assertNull
 import kotlin.test.assertFailsWith
 import org.junit.Before
 import org.junit.Test
-import software.amazon.location.auth.data.response.Credentials
+import software.amazon.location.auth.data.model.response.Credentials
 import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
 import software.amazon.location.auth.utils.Constants.EXPIRATION
 import software.amazon.location.auth.utils.Constants.SECRET_KEY

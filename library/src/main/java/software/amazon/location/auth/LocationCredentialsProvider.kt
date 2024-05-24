@@ -2,13 +2,17 @@ package software.amazon.location.auth
 
 import android.content.Context
 import java.util.Date
-import software.amazon.location.auth.data.response.Credentials
+import software.amazon.location.auth.data.model.response.Credentials
+import software.amazon.location.auth.data.network.AwsRetrofitClient
 import software.amazon.location.auth.utils.AwsRegions
+import software.amazon.location.auth.utils.AwsRegions.Companion.DEFAULT_REGION
 import software.amazon.location.auth.utils.CognitoCredentialsClient
 import software.amazon.location.auth.utils.Constants.API_KEY
+import software.amazon.location.auth.utils.Constants.BASE_URL
 import software.amazon.location.auth.utils.Constants.IDENTITY_POOL_ID
 import software.amazon.location.auth.utils.Constants.METHOD
 import software.amazon.location.auth.utils.Constants.REGION
+import software.amazon.location.auth.utils.Constants.SERVICE_NAME
 
 const val PREFS_NAME = "software.amazon.location.auth"
 
@@ -108,10 +112,18 @@ class LocationCredentialsProvider {
             val credentials = cognitoCredentialsProvider?.getCachedCredentials()
             credentials?.let {
                 if (!isCredentialsValid(it)) {
+                    AwsRetrofitClient.clearApiService()
                     generateCredentials(region, identityPoolId)
+                } else {
+                    initAwsRetrofitClient()
                 }
             }
         }
+    }
+
+    private fun initAwsRetrofitClient() {
+        val region = securePreferences.get(REGION) ?: DEFAULT_REGION.regionName
+        AwsRetrofitClient.init(getUrl(region), SERVICE_NAME, region, this)
     }
 
     /**
@@ -130,7 +142,9 @@ class LocationCredentialsProvider {
             val identityId = cognitoCredentialsHttpHelper.getIdentityId(identityPoolId)
             if (identityId.isNotEmpty()) {
                 val credentials = cognitoCredentialsHttpHelper.getCredentials(identityId)
-                cognitoCredentialsProvider = CognitoCredentialsProvider(context, credentials.credentials)
+                cognitoCredentialsProvider =
+                    CognitoCredentialsProvider(context, credentials.credentials)
+                initAwsRetrofitClient()
             }
         } catch (e: Exception) {
             throw Exception("Credentials generation failed")
@@ -145,7 +159,7 @@ class LocationCredentialsProvider {
      * @param credentials The AWS credentials to validate.
      * @return True if the credentials are valid (i.e., not expired), false otherwise.
      */
-    private fun isCredentialsValid(credentials: Credentials): Boolean {
+    fun isCredentialsValid(credentials: Credentials): Boolean {
         val expirationTime = credentials.expiration.toLong() * 1000
         val expirationDate = Date(expirationTime)
         val currentDate = Date()
@@ -178,6 +192,7 @@ class LocationCredentialsProvider {
      */
     suspend fun refresh() {
         if (cognitoCredentialsProvider === null) throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
+        AwsRetrofitClient.clearApiService()
         cognitoCredentialsProvider?.clearCredentials()
         checkCredentials()
     }
@@ -189,5 +204,10 @@ class LocationCredentialsProvider {
     fun clear() {
         if (cognitoCredentialsProvider === null) throw Exception("Clear is only supported for Cognito credentials. Make sure to use the cognito constructor.")
         cognitoCredentialsProvider?.clearCredentials()
+    }
+
+    private fun getUrl(region: String): String {
+        val urlBuilder = StringBuilder(BASE_URL.format(region))
+        return urlBuilder.toString()
     }
 }

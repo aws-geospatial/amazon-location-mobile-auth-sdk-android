@@ -1,7 +1,7 @@
 package software.amazon.location.auth
 
 import android.content.Context
-import software.amazon.location.auth.data.response.Credentials
+import software.amazon.location.auth.data.model.response.Credentials
 import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
 import software.amazon.location.auth.utils.Constants.EXPIRATION
 import software.amazon.location.auth.utils.Constants.SECRET_KEY
