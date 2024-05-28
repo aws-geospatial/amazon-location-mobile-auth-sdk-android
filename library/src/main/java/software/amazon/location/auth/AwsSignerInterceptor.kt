@@ -9,9 +9,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
-import software.amazon.location.auth.data.response.Credentials
 import software.amazon.location.auth.utils.Constants
 import software.amazon.location.auth.utils.Constants.HEADER_HOST
 import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_CONTENT_SHA256
@@ -24,20 +24,25 @@ import software.amazon.location.auth.utils.awsAuthorizationHeader
 class AwsSignerInterceptor(
     private val serviceName: String,
     private val region: String,
-    private val credentialsProvider: Credentials?
+    private val credentialsProvider: LocationCredentialsProvider?
 ) : Interceptor {
 
     private val sdfMap = HashMap<String, SimpleDateFormat>()
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val accessKeyId = credentialsProvider?.accessKeyId
-        val secretKey = credentialsProvider?.secretKey
-        val sessionToken = credentialsProvider?.sessionToken
         val originalRequest = chain.request()
-        if (!accessKeyId.isNullOrEmpty() && !secretKey.isNullOrEmpty() && !sessionToken.isNullOrEmpty() && region.isNotEmpty() && originalRequest.url.host.contains(
-                "amazonaws.com"
-            )
-        ) {
+        if (!originalRequest.url.host.contains("amazonaws.com")) {
+            return chain.proceed(originalRequest)
+        }
+        runBlocking {
+            if (credentialsProvider != null && !credentialsProvider.isCredentialsValid(credentialsProvider.getCredentialsProvider())) {
+                credentialsProvider.checkCredentials()
+            }
+        }
+        val accessKeyId = credentialsProvider?.getCredentialsProvider()?.accessKeyId
+        val secretKey = credentialsProvider?.getCredentialsProvider()?.secretKey
+        val sessionToken = credentialsProvider?.getCredentialsProvider()?.sessionToken
+        if (!accessKeyId.isNullOrEmpty() && !secretKey.isNullOrEmpty() && !sessionToken.isNullOrEmpty() && region.isNotEmpty()) {
             val dateMilli = Date().time
             val host = extractHostHeader(originalRequest.url.toString())
             val timeStamp = getTimeStamp(dateMilli)
@@ -95,7 +100,8 @@ class AwsSignerInterceptor(
     @Throws(NoSuchAlgorithmException::class)
     private fun sha256Hex(data: String): String {
         return bytesToHex(
-            MessageDigest.getInstance(HASHING_ALGORITHM).digest(data.toByteArray(StandardCharsets.UTF_8))
+            MessageDigest.getInstance(HASHING_ALGORITHM)
+                .digest(data.toByteArray(StandardCharsets.UTF_8))
         )
     }
 

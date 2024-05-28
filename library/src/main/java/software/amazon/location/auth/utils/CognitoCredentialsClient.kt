@@ -12,10 +12,10 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import software.amazon.location.auth.data.request.GetCredentialRequest
-import software.amazon.location.auth.data.request.GetIdentityIdRequest
-import software.amazon.location.auth.data.response.GetCredentialResponse
-import software.amazon.location.auth.data.response.GetIdentityIdResponse
+import software.amazon.location.auth.data.model.request.GetCredentialRequest
+import software.amazon.location.auth.data.model.request.GetIdentityIdRequest
+import software.amazon.location.auth.data.model.response.GetCredentialResponse
+import software.amazon.location.auth.data.model.response.GetIdentityIdResponse
 import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_TARGET
 import software.amazon.location.auth.utils.Constants.MEDIA_TYPE
 import software.amazon.location.auth.utils.Constants.URL

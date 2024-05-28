@@ -1,4 +1,4 @@
-package software.amazon.location.auth.data.response
+package software.amazon.location.auth.data.model.response
 
 import com.google.gson.annotations.SerializedName
 

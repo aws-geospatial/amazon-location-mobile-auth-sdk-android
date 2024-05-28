@@ -34,7 +34,9 @@ enum class AwsRegions(val regionName: String) {
     AP_SOUTH_2("ap-south-2"),
     IL_CENTRAL_1("il-central-1");
 
+
     companion object {
+        val DEFAULT_REGION: AwsRegions = US_WEST_2
         fun fromName(regionName: String): AwsRegions {
             return entries.find { it.regionName == regionName }
                 ?: throw IllegalArgumentException("Cannot create enum from $regionName value!")

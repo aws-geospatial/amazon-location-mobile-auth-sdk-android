@@ -2,6 +2,7 @@ package software.amazon.location.auth.utils
 
 
 object Constants {
+    const val BASE_URL = "https://places.geo.%s.amazonaws.com/"
     const val URL = "https://cognito-identity.%s.amazonaws.com/"
     const val MEDIA_TYPE = "application/x-amz-json-1.1"
     const val SIGNING_ALGORITHM = "AWS4-HMAC-SHA256"
@@ -21,4 +22,9 @@ object Constants {
     const val IDENTITY_POOL_ID= "identityPoolId"
     const val API_KEY = "apiKey"
     const val DEFAULT_ENCODING = "UTF-8"
+    const val SERVICE_NAME = "geo"
+
+    const val RESPONSE_CODE_CREDENTIAL_EXPIRED = 403
+    const val CONNECTION_TIMEOUT = 30L
+    const val READ_TIMEOUT = 30L
 }
