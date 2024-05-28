@@ -13,6 +13,9 @@ import retrofit2.Retrofit
 import software.amazon.location.auth.data.network.AwsApiService
 import software.amazon.location.auth.data.network.AwsOkHttpClient
 import software.amazon.location.auth.data.network.AwsRetrofitClient
+import software.amazon.location.auth.utils.Constants.TEST_REGION
+import software.amazon.location.auth.utils.Constants.TEST_SERVICE
+import software.amazon.location.auth.utils.Constants.TEST_URL1
 
 class AwsRetrofitClientTest {
 
@@ -31,7 +34,7 @@ class AwsRetrofitClientTest {
         every { mockRetrofit.create(AwsApiService::class.java) } returns mockAwsApiService
 
         mockkStatic(AwsOkHttpClient::class)
-        AwsRetrofitClient.init("https://example.com", "geo", "us-west-2", mockCredentialsProvider)
+        AwsRetrofitClient.init(TEST_URL1, TEST_SERVICE, TEST_REGION, mockCredentialsProvider)
     }
 
     @Test
