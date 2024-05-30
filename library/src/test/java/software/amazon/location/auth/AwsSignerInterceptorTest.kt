@@ -1,5 +1,6 @@
 package software.amazon.location.auth
 
+import aws.sdk.kotlin.services.cognitoidentity.model.Credentials
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -14,7 +15,6 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import org.junit.Before
 import org.junit.Test
-import software.amazon.location.auth.data.model.response.Credentials
 import software.amazon.location.auth.utils.Constants.HEADER_AUTHORIZATION
 import software.amazon.location.auth.utils.Constants.HEADER_HOST
 import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_SECURITY_TOKEN

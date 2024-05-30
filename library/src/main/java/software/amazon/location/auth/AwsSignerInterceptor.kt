@@ -31,17 +31,17 @@ class AwsSignerInterceptor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
-        if (!originalRequest.url.host.contains("amazonaws.com")) {
+        if (!originalRequest.url.host.contains("amazonaws.com") || credentialsProvider?.getCredentialsProvider() == null) {
             return chain.proceed(originalRequest)
         }
         runBlocking {
-            if (credentialsProvider != null && !credentialsProvider.isCredentialsValid(credentialsProvider.getCredentialsProvider())) {
+            if (!credentialsProvider.isCredentialsValid(credentialsProvider.getCredentialsProvider()!!)) {
                 credentialsProvider.checkCredentials()
             }
         }
-        val accessKeyId = credentialsProvider?.getCredentialsProvider()?.accessKeyId
-        val secretKey = credentialsProvider?.getCredentialsProvider()?.secretKey
-        val sessionToken = credentialsProvider?.getCredentialsProvider()?.sessionToken
+        val accessKeyId = credentialsProvider.getCredentialsProvider()?.accessKeyId
+        val secretKey = credentialsProvider.getCredentialsProvider()?.secretKey
+        val sessionToken = credentialsProvider.getCredentialsProvider()?.sessionToken
         if (!accessKeyId.isNullOrEmpty() && !secretKey.isNullOrEmpty() && !sessionToken.isNullOrEmpty() && region.isNotEmpty()) {
             val dateMilli = Date().time
             val host = extractHostHeader(originalRequest.url.toString())

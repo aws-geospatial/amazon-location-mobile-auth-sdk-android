@@ -1,18 +1,20 @@
 package software.amazon.location.auth
 
 import android.content.Context
-import java.util.Date
-import software.amazon.location.auth.data.model.response.Credentials
-import software.amazon.location.auth.data.network.AwsRetrofitClient
+import aws.sdk.kotlin.runtime.auth.credentials.StaticCredentialsProvider
+import aws.sdk.kotlin.services.cognitoidentity.CognitoIdentityClient
+import aws.sdk.kotlin.services.cognitoidentity.model.GetCredentialsForIdentityRequest
+import aws.sdk.kotlin.services.cognitoidentity.model.GetIdRequest
+import aws.sdk.kotlin.services.location.LocationClient
+import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
+import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
+import aws.smithy.kotlin.runtime.time.Instant
+import aws.smithy.kotlin.runtime.time.epochMilliseconds
 import software.amazon.location.auth.utils.AwsRegions
-import software.amazon.location.auth.utils.AwsRegions.Companion.DEFAULT_REGION
-import software.amazon.location.auth.utils.CognitoCredentialsClient
 import software.amazon.location.auth.utils.Constants.API_KEY
-import software.amazon.location.auth.utils.Constants.BASE_URL
 import software.amazon.location.auth.utils.Constants.IDENTITY_POOL_ID
 import software.amazon.location.auth.utils.Constants.METHOD
 import software.amazon.location.auth.utils.Constants.REGION
-import software.amazon.location.auth.utils.Constants.SERVICE_NAME
 
 const val PREFS_NAME = "software.amazon.location.auth"
 
@@ -24,6 +26,7 @@ class LocationCredentialsProvider {
     private var cognitoCredentialsProvider: CognitoCredentialsProvider? = null
     private var apiKeyProvider: ApiKeyCredentialsProvider? = null
     private var securePreferences: EncryptedSharedPreferences
+    private var locationClient: LocationClient? = null
 
     /**
      * Initializes with Cognito credentials.
@@ -86,13 +89,11 @@ class LocationCredentialsProvider {
     }
 
     /**
-     * check AWS credentials.
+     * Checks AWS credentials availability and validity.
      *
-     * This function retrieves the identity pool ID and region from a secure preferences
-     *
-     * The function first attempts to initialize the CognitoCredentialsProvider. If it fails
-     * or if there are no cached credentials or if the cached credentials are invalid, it
-     * generates new credentials.
+     * This function retrieves the identity pool ID and region from secure preferences. It then
+     * attempts to initialize the CognitoCredentialsProvider. If no credentials are found or if
+     * the cached credentials are invalid, new credentials are generated.
      *
      * @throws Exception if the identity pool ID or region is not found, or if credential generation fails.
      */
@@ -112,39 +113,91 @@ class LocationCredentialsProvider {
             val credentials = cognitoCredentialsProvider?.getCachedCredentials()
             credentials?.let {
                 if (!isCredentialsValid(it)) {
-                    AwsRetrofitClient.clearApiService()
                     generateCredentials(region, identityPoolId)
-                } else {
-                    initAwsRetrofitClient()
                 }
             }
         }
     }
 
-    private fun initAwsRetrofitClient() {
-        val region = securePreferences.get(REGION) ?: DEFAULT_REGION.regionName
-        AwsRetrofitClient.init(getUrl(region), SERVICE_NAME, region, this)
+
+    /**
+     * Retrieves the LocationClient instance with configured AWS credentials.
+     *
+     * This function initializes and returns the LocationClient with the AWS region and
+     * credentials retrieved from secure preferences.
+     *
+     * @return An instance of LocationClient for interacting with the Amazon Location service.
+     * @throws Exception if the AWS region is not found in secure preferences.
+     */
+    fun getLocationClient(): LocationClient? {
+        val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
+        val region = securePreferences.get(REGION)
+        if (identityPoolId === null || region === null) throw Exception("No credentials found")
+        if (locationClient == null) {
+            val credentialsProvider = createCredentialsProvider()
+            locationClient = LocationClient {
+                this.region = region
+                this.credentialsProvider = credentialsProvider
+            }
+        }
+        return locationClient
+    }
+
+    /**
+     * Creates a new instance of CredentialsProvider using the credentials obtained from the current provider.
+     *
+     * This function constructs a CredentialsProvider with the AWS credentials retrieved from the existing provider.
+     * It extracts the access key ID, secret access key, and session token from the current provider and initializes
+     * a StaticCredentialsProvider with these credentials.
+     *
+     * @return A new instance of CredentialsProvider initialized with the current AWS credentials.
+     * @throws Exception if credentials cannot be retrieved.
+     */
+    private fun createCredentialsProvider(): CredentialsProvider {
+        if (getCredentialsProvider() == null || getCredentialsProvider()?.accessKeyId == null || getCredentialsProvider()?.secretKey == null) throw Exception(
+            "Failed to get credentials"
+        )
+        return StaticCredentialsProvider(
+            Credentials.invoke(
+                accessKeyId = getCredentialsProvider()?.accessKeyId!!,
+                secretAccessKey = getCredentialsProvider()?.secretKey!!,
+                sessionToken = getCredentialsProvider()?.sessionToken,
+            )
+        )
     }
 
     /**
      * Generates new AWS credentials using the specified region and identity pool ID.
      *
-     * This function uses CognitoCredentialsClient to fetch the identity ID and credentials,
-     * and then initializes the CognitoCredentialsProvider with the retrieved credentials.
+     * This function fetches the identity ID and credentials from Cognito, and then initializes
+     * the CognitoCredentialsProvider with the retrieved credentials.
      *
      * @param region The AWS region where the identity pool is located.
      * @param identityPoolId The identity pool ID for Cognito.
      * @throws Exception if the credential generation fails.
      */
     private suspend fun generateCredentials(region: String, identityPoolId: String) {
-        val cognitoCredentialsHttpHelper = CognitoCredentialsClient(region)
+        val client = CognitoIdentityClient { this.region = region }
         try {
-            val identityId = cognitoCredentialsHttpHelper.getIdentityId(identityPoolId)
+            val getIdResponse = client.getId(GetIdRequest { this.identityPoolId = identityPoolId })
+            val identityId =
+                getIdResponse.identityId ?: throw Exception("Failed to get identity ID")
             if (identityId.isNotEmpty()) {
-                val credentials = cognitoCredentialsHttpHelper.getCredentials(identityId)
-                cognitoCredentialsProvider =
-                    CognitoCredentialsProvider(context, credentials.credentials)
-                initAwsRetrofitClient()
+                val getCredentialsResponse =
+                    client.getCredentialsForIdentity(GetCredentialsForIdentityRequest {
+                        this.identityId = identityId
+                    })
+
+                val credentials = getCredentialsResponse.credentials
+                    ?: throw Exception("Failed to get credentials")
+                if (credentials.accessKeyId == null || credentials.secretKey == null || credentials.sessionToken == null) throw Exception(
+                    "Credentials generation failed"
+                )
+                cognitoCredentialsProvider = CognitoCredentialsProvider(
+                    context,
+                    credentials
+                )
+                locationClient = null
             }
         } catch (e: Exception) {
             throw Exception("Credentials generation failed")
@@ -154,16 +207,13 @@ class LocationCredentialsProvider {
     /**
      * Checks if the provided credentials are still valid.
      *
-     * This function compares the current date with the expiration date of the credentials.
-     *
      * @param credentials The AWS credentials to validate.
      * @return True if the credentials are valid (i.e., not expired), false otherwise.
      */
-    fun isCredentialsValid(credentials: Credentials): Boolean {
-        val expirationTime = credentials.expiration.toLong() * 1000
-        val expirationDate = Date(expirationTime)
-        val currentDate = Date()
-        return currentDate.before(expirationDate)
+    fun isCredentialsValid(credentials: aws.sdk.kotlin.services.cognitoidentity.model.Credentials): Boolean {
+        val currentTimeMillis = Instant.now().epochMilliseconds
+        val expirationTimeMillis = credentials.expiration?.epochMilliseconds ?: throw Exception("Failed to get credentials")
+        return currentTimeMillis < expirationTimeMillis
     }
 
     /**
@@ -171,9 +221,9 @@ class LocationCredentialsProvider {
      * @return The Credentials instance.
      * @throws Exception If the Cognito provider is not initialized.
      */
-    fun getCredentialsProvider(): Credentials {
+    fun getCredentialsProvider(): aws.sdk.kotlin.services.cognitoidentity.model.Credentials? {
         if (cognitoCredentialsProvider === null) throw Exception("Cognito credentials not initialized")
-        return cognitoCredentialsProvider?.getCachedCredentials()!!
+        return cognitoCredentialsProvider?.getCachedCredentials()
     }
 
     /**
@@ -192,7 +242,7 @@ class LocationCredentialsProvider {
      */
     suspend fun refresh() {
         if (cognitoCredentialsProvider === null) throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
-        AwsRetrofitClient.clearApiService()
+        locationClient = null
         cognitoCredentialsProvider?.clearCredentials()
         checkCredentials()
     }
@@ -204,10 +254,5 @@ class LocationCredentialsProvider {
     fun clear() {
         if (cognitoCredentialsProvider === null) throw Exception("Clear is only supported for Cognito credentials. Make sure to use the cognito constructor.")
         cognitoCredentialsProvider?.clearCredentials()
-    }
-
-    private fun getUrl(region: String): String {
-        val urlBuilder = StringBuilder(BASE_URL.format(region))
-        return urlBuilder.toString()
     }
 }
