@@ -1,16 +1,24 @@
 package software.amazon.location.auth
 
 import android.content.Context
+import aws.sdk.kotlin.services.cognitoidentity.model.Credentials
+import aws.sdk.kotlin.services.location.LocationClient
+import aws.smithy.kotlin.runtime.time.Instant
+import aws.smithy.kotlin.runtime.time.epochMilliseconds
+import aws.smithy.kotlin.runtime.time.fromEpochMilliseconds
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.runs
 import io.mockk.verify
+import junit.framework.TestCase.assertFalse
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,17 +31,19 @@ import software.amazon.location.auth.utils.Constants.METHOD
 import software.amazon.location.auth.utils.Constants.REGION
 import software.amazon.location.auth.utils.Constants.SECRET_KEY
 import software.amazon.location.auth.utils.Constants.SESSION_TOKEN
+import software.amazon.location.auth.utils.Constants.TEST_IDENTITY_POOL_ID
 
-private const val TEST_IDENTITY_POOL_ID = "us-east-1:dummyIdentityPoolId"
 private const val TEST_API_KEY = "dummyApiKey"
 
 class LocationCredentialsProviderTest {
 
     private lateinit var context: Context
+    private lateinit var locationClient: LocationClient
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     @Before
     fun setUp() {
         context = mockk(relaxed = true)
+        locationClient = mockk(relaxed = true)
         mockkConstructor(EncryptedSharedPreferences::class)
 
         every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
@@ -93,7 +103,43 @@ class LocationCredentialsProviderTest {
         val provider = LocationCredentialsProvider(context, TEST_API_KEY)
         assertNotNull(provider.getApiKeyProvider())
     }
+    @Test
+    fun `isCredentialsValid returns true when credentials are valid`() {
+        val expirationTime = Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000) // 10 seconds in the future
+        val mockCredentials = mockk<Credentials> {
+            every { expiration } returns expirationTime
+        }
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
+        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
+        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        coroutineScope.launch {
+            provider.refresh()
+        }
+        val result = provider.isCredentialsValid(mockCredentials)
+        assertTrue(result)
+    }
 
+    @Test
+    fun `isCredentialsValid returns false when credentials are expired`() {
+        val expirationTime = Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds - 10000) // 10 seconds in the past
+        val mockCredentials = mockk<Credentials> {
+            every { expiration } returns expirationTime
+        }
+
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
+        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
+        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        val result = provider.isCredentialsValid(mockCredentials)
+        assertFalse(result)
+    }
     @Test
     fun `clear successfully clears cognito credentials`() {
         every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"

@@ -87,4 +87,15 @@ class EncryptedSharedPreferences(private val context: Context, private val prefe
         editor.remove(key)
         editor.apply()
     }
+
+    /**
+     * Checks if a particular key exists in the encrypted preferences.
+     * @param key The key to check for existence.
+     * @return True if the key exists, false otherwise.
+     * @throws Exception if preferences are not initialized.
+     */
+    fun contains(key: String): Boolean {
+        if (sharedPreferences === null) throw Exception("SharedPreferences not initialized")
+        return sharedPreferences!!.contains(key)
+    }
 }

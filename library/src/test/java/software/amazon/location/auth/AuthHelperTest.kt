@@ -14,8 +14,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import software.amazon.location.auth.utils.AwsRegions
 import software.amazon.location.auth.utils.Constants
+import software.amazon.location.auth.utils.Constants.TEST_IDENTITY_POOL_ID
 
-private const val TEST_IDENTITY_POOL_ID = "us-east-1:dummyIdentityPoolId"
+
 private const val TEST_API_KEY = "dummyApiKey"
 
 class AuthHelperTest {

@@ -1,7 +1,10 @@
 package software.amazon.location.auth
 
 import android.content.Context
-import software.amazon.location.auth.data.model.response.Credentials
+import aws.sdk.kotlin.services.cognitoidentity.model.Credentials
+import aws.smithy.kotlin.runtime.time.Instant
+import aws.smithy.kotlin.runtime.time.epochMilliseconds
+import aws.smithy.kotlin.runtime.time.fromEpochMilliseconds
 import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
 import software.amazon.location.auth.utils.Constants.EXPIRATION
 import software.amazon.location.auth.utils.Constants.SECRET_KEY
@@ -50,10 +53,11 @@ class CognitoCredentialsProvider {
      */
     private fun saveCredentials(credentials: Credentials) {
         if (securePreferences === null) throw Exception("Not initialized")
-        securePreferences?.put(ACCESS_KEY_ID, credentials.accessKeyId)
-        securePreferences?.put(SECRET_KEY, credentials.secretKey)
-        securePreferences?.put(SESSION_TOKEN, credentials.sessionToken)
-        securePreferences?.put(EXPIRATION, credentials.expiration.toString())
+        credentials.accessKeyId?.let { securePreferences?.put(ACCESS_KEY_ID, it) }
+        credentials.secretKey?.let { securePreferences?.put(SECRET_KEY, it) }
+        credentials.sessionToken?.let { securePreferences?.put(SESSION_TOKEN, it) }
+        credentials.expiration?.let { securePreferences?.put(EXPIRATION, it.epochMilliseconds.toString()) }
+
     }
 
     /**
@@ -62,12 +66,17 @@ class CognitoCredentialsProvider {
      */
     fun getCachedCredentials(): Credentials? {
         if (securePreferences === null) return null
-        val accessKeyId = securePreferences?.get(ACCESS_KEY_ID)
-        val secretKey = securePreferences?.get(SECRET_KEY)
-        val sessionToken = securePreferences?.get(SESSION_TOKEN)
-        val expiration = securePreferences?.get(EXPIRATION)
-        if (accessKeyId.isNullOrEmpty() || secretKey.isNullOrEmpty() || sessionToken.isNullOrEmpty() || expiration.isNullOrEmpty()) return null
-        return Credentials(accessKeyId, expiration.toDouble(), secretKey, sessionToken)
+        val mAccessKeyId = securePreferences?.get(ACCESS_KEY_ID)
+        val mSecretKey = securePreferences?.get(SECRET_KEY)
+        val mSessionToken = securePreferences?.get(SESSION_TOKEN)
+        val mExpiration = securePreferences?.get(EXPIRATION)
+        if (mAccessKeyId.isNullOrEmpty() || mSecretKey.isNullOrEmpty() || mSessionToken.isNullOrEmpty() || mExpiration.isNullOrEmpty()) return null
+        return Credentials.invoke {
+            accessKeyId = mAccessKeyId
+            secretKey = mSecretKey
+            sessionToken = mSessionToken
+            expiration = Instant.fromEpochMilliseconds(mExpiration.toLong())
+        }
     }
 
     /**
