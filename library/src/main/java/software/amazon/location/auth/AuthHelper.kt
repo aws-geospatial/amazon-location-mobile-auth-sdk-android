@@ -25,7 +25,7 @@ class AuthHelper(private val context: Context) {
                 // Get the region from the identity pool id
                 AwsRegions.fromName(identityPoolId.split(":")[0]),
             )
-            locationCredentialsProvider.checkCredentials()
+            locationCredentialsProvider.verifyAndRefreshCredentials()
             locationCredentialsProvider // Return the generated locationCredentialsProvider
         }
     }
@@ -46,7 +46,7 @@ class AuthHelper(private val context: Context) {
                 identityPoolId,
                 AwsRegions.fromName(region),
             )
-            locationCredentialsProvider.checkCredentials()
+            locationCredentialsProvider.verifyAndRefreshCredentials()
             locationCredentialsProvider // Return the generated locationCredentialsProvider
         }
     }
@@ -67,7 +67,7 @@ class AuthHelper(private val context: Context) {
                 identityPoolId,
                 region,
             )
-            locationCredentialsProvider.checkCredentials()
+            locationCredentialsProvider.verifyAndRefreshCredentials()
             locationCredentialsProvider // Return the generated locationCredentialsProvider
         }
     }

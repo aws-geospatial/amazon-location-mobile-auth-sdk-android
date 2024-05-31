@@ -35,8 +35,8 @@ class AwsSignerInterceptor(
             return chain.proceed(originalRequest)
         }
         runBlocking {
-            if (!credentialsProvider.isCredentialsValid(credentialsProvider.getCredentialsProvider()!!)) {
-                credentialsProvider.checkCredentials()
+            if (!credentialsProvider.isCredentialsValid()) {
+                credentialsProvider.verifyAndRefreshCredentials()
             }
         }
         val accessKeyId = credentialsProvider.getCredentialsProvider()?.accessKeyId

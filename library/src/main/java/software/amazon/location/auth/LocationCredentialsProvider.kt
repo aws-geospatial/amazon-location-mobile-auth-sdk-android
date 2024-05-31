@@ -97,7 +97,7 @@ class LocationCredentialsProvider {
      *
      * @throws Exception if the identity pool ID or region is not found, or if credential generation fails.
      */
-    suspend fun checkCredentials() {
+    suspend fun verifyAndRefreshCredentials() {
         val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
         val region = securePreferences.get(REGION)
         if (identityPoolId === null || region === null) throw Exception("No credentials found")
@@ -110,11 +110,8 @@ class LocationCredentialsProvider {
         if (!isCredentialsAvailable) {
             generateCredentials(region, identityPoolId)
         } else {
-            val credentials = cognitoCredentialsProvider?.getCachedCredentials()
-            credentials?.let {
-                if (!isCredentialsValid(it)) {
-                    generateCredentials(region, identityPoolId)
-                }
+            if (!isCredentialsValid()) {
+                generateCredentials(region, identityPoolId)
             }
         }
     }
@@ -207,12 +204,12 @@ class LocationCredentialsProvider {
     /**
      * Checks if the provided credentials are still valid.
      *
-     * @param credentials The AWS credentials to validate.
      * @return True if the credentials are valid (i.e., not expired), false otherwise.
      */
-    fun isCredentialsValid(credentials: aws.sdk.kotlin.services.cognitoidentity.model.Credentials): Boolean {
+    fun isCredentialsValid(): Boolean {
+        val credentials = cognitoCredentialsProvider?.getCachedCredentials()
         val currentTimeMillis = Instant.now().epochMilliseconds
-        val expirationTimeMillis = credentials.expiration?.epochMilliseconds ?: throw Exception("Failed to get credentials")
+        val expirationTimeMillis = credentials?.expiration?.epochMilliseconds ?: throw Exception("Failed to get credentials")
         return currentTimeMillis < expirationTimeMillis
     }
 
@@ -244,7 +241,7 @@ class LocationCredentialsProvider {
         if (cognitoCredentialsProvider === null) throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
         locationClient = null
         cognitoCredentialsProvider?.clearCredentials()
-        checkCredentials()
+        verifyAndRefreshCredentials()
     }
 
     /**

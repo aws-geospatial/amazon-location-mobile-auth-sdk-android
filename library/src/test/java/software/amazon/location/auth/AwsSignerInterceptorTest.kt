@@ -68,7 +68,7 @@ class AwsSignerInterceptorTest {
 
         every { chain.request() } returns originalRequest
         every { chain.proceed(any()) } returns mockk(relaxed = true)
-        coEvery { mockCredentialsProvider.isCredentialsValid(any()) } returns true
+        coEvery { mockCredentialsProvider.isCredentialsValid() } returns true
         coEvery { mockCredentialsProvider.getCredentialsProvider() } returns credentials
 
         val response = runBlocking { interceptor.intercept(chain) }
