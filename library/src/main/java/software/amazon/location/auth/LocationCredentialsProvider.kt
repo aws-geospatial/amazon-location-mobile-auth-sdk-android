@@ -27,6 +27,7 @@ class LocationCredentialsProvider {
     private var apiKeyProvider: ApiKeyCredentialsProvider? = null
     private var securePreferences: EncryptedSharedPreferences
     private var locationClient: LocationClient? = null
+    private var cognitoIdentityClient: CognitoIdentityClient? = null
 
     /**
      * Initializes with Cognito credentials.
@@ -132,12 +133,26 @@ class LocationCredentialsProvider {
         if (identityPoolId === null || region === null) throw Exception("No credentials found")
         if (locationClient == null) {
             val credentialsProvider = createCredentialsProvider()
-            locationClient = LocationClient {
-                this.region = region
-                this.credentialsProvider = credentialsProvider
-            }
+            locationClient = generateLocationClient(region, credentialsProvider)
         }
         return locationClient
+    }
+
+    /**
+     * Generates a new instance of LocationClient with the specified region and credentials provider.
+     *
+     * @param region The AWS region for the LocationClient.
+     * @param credentialsProvider The credentials provider for the LocationClient.
+     * @return A new instance of LocationClient.
+     */
+    fun generateLocationClient(
+        region: String?,
+        credentialsProvider: CredentialsProvider
+    ): LocationClient {
+        return LocationClient {
+            this.region = region
+            this.credentialsProvider = credentialsProvider
+        }
     }
 
     /**
@@ -174,18 +189,20 @@ class LocationCredentialsProvider {
      * @throws Exception if the credential generation fails.
      */
     private suspend fun generateCredentials(region: String, identityPoolId: String) {
-        val client = CognitoIdentityClient { this.region = region }
+        if (cognitoIdentityClient == null) {
+            cognitoIdentityClient = generateCognitoIdentityClient(region)
+        }
         try {
-            val getIdResponse = client.getId(GetIdRequest { this.identityPoolId = identityPoolId })
+            val getIdResponse = cognitoIdentityClient?.getId(GetIdRequest { this.identityPoolId = identityPoolId })
             val identityId =
-                getIdResponse.identityId ?: throw Exception("Failed to get identity ID")
+                getIdResponse?.identityId ?: throw Exception("Failed to get identity ID")
             if (identityId.isNotEmpty()) {
                 val getCredentialsResponse =
-                    client.getCredentialsForIdentity(GetCredentialsForIdentityRequest {
+                    cognitoIdentityClient?.getCredentialsForIdentity(GetCredentialsForIdentityRequest {
                         this.identityId = identityId
                     })
 
-                val credentials = getCredentialsResponse.credentials
+                val credentials = getCredentialsResponse?.credentials
                     ?: throw Exception("Failed to get credentials")
                 if (credentials.accessKeyId == null || credentials.secretKey == null || credentials.sessionToken == null) throw Exception(
                     "Credentials generation failed"
@@ -199,6 +216,17 @@ class LocationCredentialsProvider {
         } catch (e: Exception) {
             throw Exception("Credentials generation failed")
         }
+    }
+
+    /**
+     * Generates a new instance of CognitoIdentityClient with the specified region.
+     *
+     * @param region The AWS region for the CognitoIdentityClient.
+     * @return A new instance of CognitoIdentityClient.
+     */
+
+    fun generateCognitoIdentityClient(region: String): CognitoIdentityClient {
+        return CognitoIdentityClient { this.region = region }
     }
 
     /**

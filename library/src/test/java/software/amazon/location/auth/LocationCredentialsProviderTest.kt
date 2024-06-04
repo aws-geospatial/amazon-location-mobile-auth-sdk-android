@@ -1,11 +1,18 @@
 package software.amazon.location.auth
 
 import android.content.Context
+import aws.sdk.kotlin.services.cognitoidentity.CognitoIdentityClient
 import aws.sdk.kotlin.services.cognitoidentity.model.Credentials
+import aws.sdk.kotlin.services.cognitoidentity.model.GetCredentialsForIdentityRequest
+import aws.sdk.kotlin.services.cognitoidentity.model.GetCredentialsForIdentityResponse
+import aws.sdk.kotlin.services.cognitoidentity.model.GetIdRequest
+import aws.sdk.kotlin.services.cognitoidentity.model.GetIdResponse
 import aws.sdk.kotlin.services.location.LocationClient
+import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
 import aws.smithy.kotlin.runtime.time.Instant
 import aws.smithy.kotlin.runtime.time.epochMilliseconds
 import aws.smithy.kotlin.runtime.time.fromEpochMilliseconds
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -13,14 +20,15 @@ import io.mockk.mockkConstructor
 import io.mockk.runs
 import io.mockk.verify
 import junit.framework.TestCase.assertFalse
-import org.junit.Before
-import org.junit.Test
+import junit.framework.TestCase.assertNotNull
 import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.junit.Before
+import org.junit.Test
 import software.amazon.location.auth.utils.AwsRegions
 import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
 import software.amazon.location.auth.utils.Constants.API_KEY
@@ -38,24 +46,36 @@ class LocationCredentialsProviderTest {
 
     private lateinit var context: Context
     private lateinit var locationClient: LocationClient
+    private lateinit var cognitoIdentityClient: CognitoIdentityClient
+    private lateinit var cognitoCredentialsProvider: CognitoCredentialsProvider
+    private lateinit var credentialsProvider: CredentialsProvider
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
+
     @Before
     fun setUp() {
         context = mockk(relaxed = true)
         locationClient = mockk(relaxed = true)
+        cognitoIdentityClient = mockk(relaxed = true)
+        cognitoCredentialsProvider = mockk(relaxed = true)
+        credentialsProvider = mockk(relaxed = true)
         mockkConstructor(EncryptedSharedPreferences::class)
         mockkConstructor(CognitoCredentialsProvider::class)
-
+        mockkConstructor(LocationCredentialsProvider::class)
         every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
+
+        every { anyConstructed<LocationCredentialsProvider>().generateCognitoIdentityClient("us-east-1") } returns cognitoIdentityClient
+        every { anyConstructed<LocationCredentialsProvider>().generateLocationClient("us-east-1", any()) } returns locationClient
         every { anyConstructed<EncryptedSharedPreferences>().put(any(), any<String>()) } just runs
         every { anyConstructed<EncryptedSharedPreferences>().get(REGION) } returns "us-east-1"
         every { anyConstructed<EncryptedSharedPreferences>().clear() } just runs
+        every { anyConstructed<EncryptedSharedPreferences>().remove(any()) } just runs
     }
 
     @Test
     fun `constructor with Cognito initializes correctly`() {
         every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "api"
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        val provider =
+            LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         assertNotNull(provider)
     }
 
@@ -86,13 +106,15 @@ class LocationCredentialsProviderTest {
     }
 
     @Test
-    fun `getCredentialsProvider returns cognito provider successfully`(){
+    fun `getCredentialsProvider returns cognito provider successfully`() {
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
         every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
-        coroutineScope.launch {
+        val provider =
+            LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        runBlocking {
             provider.verifyAndRefreshCredentials()
             assertNotNull(provider.getCredentialsProvider())
         }
@@ -103,9 +125,11 @@ class LocationCredentialsProviderTest {
         val provider = LocationCredentialsProvider(context, TEST_API_KEY)
         assertNotNull(provider.getApiKeyProvider())
     }
+
     @Test
     fun `isCredentialsValid returns true when credentials are valid`() {
-        val expirationTime = Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000) // 10 seconds in the future
+        val expirationTime =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000) // 10 seconds in the future
         val mockCredentials = Credentials.invoke {
             expiration = expirationTime
             secretKey = "test"
@@ -119,8 +143,10 @@ class LocationCredentialsProviderTest {
         every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
         every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
-        coroutineScope.launch {
+        val provider =
+            LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        runBlocking {
+            provider.verifyAndRefreshCredentials()
             provider.refresh()
             val result = provider.isCredentialsValid()
             assertTrue(result)
@@ -129,7 +155,8 @@ class LocationCredentialsProviderTest {
 
     @Test
     fun `isCredentialsValid returns false when credentials are expired`() {
-        val expirationTime = Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds - 10000) // 10 seconds in the past
+        val expirationTime =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds - 10000) // 10 seconds in the past
         val mockCredentials = mockk<Credentials> {
             every { expiration } returns expirationTime
         }
@@ -140,13 +167,16 @@ class LocationCredentialsProviderTest {
         every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
         every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
-        coroutineScope.launch {
+        val provider =
+            LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        runBlocking {
+            provider.verifyAndRefreshCredentials()
             provider.refresh()
             val result = provider.isCredentialsValid()
             assertFalse(result)
         }
     }
+
     @Test
     fun `clear successfully clears cognito credentials`() {
         every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
@@ -155,8 +185,9 @@ class LocationCredentialsProviderTest {
         every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
         every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
-        coroutineScope.launch {
+        val provider =
+            LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        runBlocking {
             provider.verifyAndRefreshCredentials()
             provider.clear()
         }
@@ -166,9 +197,43 @@ class LocationCredentialsProviderTest {
     fun `check credentials`() {
         every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
         every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
-        coroutineScope.launch {
+        val provider =
+            LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        runBlocking {
             provider.verifyAndRefreshCredentials()
+        }
+    }
+
+    @Test
+    fun `get Location Client`() {
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
+        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
+        val identityId = "test-identity-id"
+        val credentials = Credentials {
+            accessKeyId = "test-access-key"
+            secretKey = "test-secret-key"
+            sessionToken = "test-session-token"
+        }
+
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
+        val provider =
+            LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        coEvery { cognitoIdentityClient.getId(any<GetIdRequest>()) } returns GetIdResponse {
+            this.identityId = identityId
+        }
+
+        coEvery { cognitoIdentityClient.getCredentialsForIdentity(any<GetCredentialsForIdentityRequest>()) } returns GetCredentialsForIdentityResponse {
+            this.credentials = credentials
+        }
+        runBlocking {
+            provider.verifyAndRefreshCredentials()
+            val locationClient = provider.getLocationClient()
+            assertNotNull(locationClient)
         }
     }
 
@@ -190,10 +255,18 @@ class LocationCredentialsProviderTest {
     fun `verify SecurePreferences interactions for cognito initialization`() {
         LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         verify(exactly = 1) { anyConstructed<EncryptedSharedPreferences>().put(METHOD, "cognito") }
-        verify(exactly = 1) { anyConstructed<EncryptedSharedPreferences>().put(IDENTITY_POOL_ID,
-            TEST_IDENTITY_POOL_ID
-        ) }
-        verify(exactly = 1) { anyConstructed<EncryptedSharedPreferences>().put(REGION, AwsRegions.US_EAST_1.regionName) }
+        verify(exactly = 1) {
+            anyConstructed<EncryptedSharedPreferences>().put(
+                IDENTITY_POOL_ID,
+                TEST_IDENTITY_POOL_ID
+            )
+        }
+        verify(exactly = 1) {
+            anyConstructed<EncryptedSharedPreferences>().put(
+                REGION,
+                AwsRegions.US_EAST_1.regionName
+            )
+        }
     }
 
     @Test
@@ -204,7 +277,8 @@ class LocationCredentialsProviderTest {
 
     @Test
     fun `getApiKeyProvider throws if API key provider not initialized`() {
-        val provider = LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        val provider =
+            LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         assertFailsWith<Exception> { provider.getApiKeyProvider() }
     }
 
