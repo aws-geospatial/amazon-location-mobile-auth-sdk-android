@@ -9,7 +9,7 @@ This authentication SDK works with the overall AWS SDK. Both SDKs are published 
 Add the following lines to the dependencies section of your build.gradle file in Android Studio:
 
 ```
-implementation("software.amazon.location:auth:0.0.1")
+implementation("software.amazon.location:auth:0.0.2")
 implementation("com.amazonaws:aws-android-sdk-location:2.72.0")
 ```
 
