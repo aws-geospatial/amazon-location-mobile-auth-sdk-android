@@ -73,7 +73,7 @@ class CognitoCredentialsProviderTest {
             )
         } just runs
 
-        CognitoCredentialsProvider(context, credentials)
+        CognitoCredentialsProvider(context,"", credentials)
 
         verify {
             anyConstructed<EncryptedSharedPreferences>().put(
@@ -119,6 +119,7 @@ class CognitoCredentialsProviderTest {
     fun `getCachedCredentials throws when not initialized`() {
         val provider = CognitoCredentialsProvider(
             context,
+            "",
             Credentials.invoke {
                 accessKeyId = "accessKeyId"
                 expiration = Instant.now()
@@ -138,6 +139,7 @@ class CognitoCredentialsProviderTest {
     fun `clearCredentials clears the stored credentials`() {
         val provider = CognitoCredentialsProvider(
             context,
+            "",
             Credentials.invoke {
                 accessKeyId = "accessKeyId"
                 expiration = Instant.now()

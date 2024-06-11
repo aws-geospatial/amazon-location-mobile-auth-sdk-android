@@ -7,6 +7,7 @@ import aws.smithy.kotlin.runtime.time.epochMilliseconds
 import aws.smithy.kotlin.runtime.time.fromEpochMilliseconds
 import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
 import software.amazon.location.auth.utils.Constants.EXPIRATION
+import software.amazon.location.auth.utils.Constants.IDENTITY_ID
 import software.amazon.location.auth.utils.Constants.SECRET_KEY
 import software.amazon.location.auth.utils.Constants.SESSION_TOKEN
 
@@ -14,16 +15,17 @@ import software.amazon.location.auth.utils.Constants.SESSION_TOKEN
  * Provides Cognito credentials for accessing services and manages their storage.
  */
 class CognitoCredentialsProvider {
-    private var securePreferences: EncryptedSharedPreferences? =null
+    private var securePreferences: EncryptedSharedPreferences? = null
 
     /**
      * Constructor that initializes the provider with a context and credentials.
      * @param context The application context used to initialize the key-value store.
+     * @param identityId The identityId to be saved in the key-value store.
      * @param credentials The credentials to be saved in the key-value store.
      */
-    constructor(context: Context, credentials: Credentials) {
+    constructor(context: Context, identityId: String, credentials: Credentials) {
         initialize(context)
-        saveCredentials(credentials)
+        saveCredentials(identityId, credentials)
     }
 
     /**
@@ -48,15 +50,22 @@ class CognitoCredentialsProvider {
 
     /**
      * Saves the given credentials to the key-value store.
+     * @param identityId The identityId to be saved in the key-value store.
      * @param credentials The credentials to be saved in the key-value store.
      * @throws Exception if the key-value store is not initialized.
      */
-    private fun saveCredentials(credentials: Credentials) {
+    private fun saveCredentials(identityId: String, credentials: Credentials) {
         if (securePreferences === null) throw Exception("Not initialized")
+        securePreferences?.put(IDENTITY_ID, identityId)
         credentials.accessKeyId?.let { securePreferences?.put(ACCESS_KEY_ID, it) }
         credentials.secretKey?.let { securePreferences?.put(SECRET_KEY, it) }
         credentials.sessionToken?.let { securePreferences?.put(SESSION_TOKEN, it) }
-        credentials.expiration?.let { securePreferences?.put(EXPIRATION, it.epochMilliseconds.toString()) }
+        credentials.expiration?.let {
+            securePreferences?.put(
+                EXPIRATION,
+                it.epochMilliseconds.toString()
+            )
+        }
 
     }
 
@@ -84,6 +93,7 @@ class CognitoCredentialsProvider {
      */
     fun clearCredentials() {
         if (securePreferences === null) throw Exception("Not initialized")
+        securePreferences?.remove(IDENTITY_ID)
         securePreferences?.remove(ACCESS_KEY_ID)
         securePreferences?.remove(SECRET_KEY)
         securePreferences?.remove(SESSION_TOKEN)

@@ -209,6 +209,7 @@ class LocationCredentialsProvider {
                 )
                 cognitoCredentialsProvider = CognitoCredentialsProvider(
                     context,
+                    identityId,
                     credentials
                 )
                 locationClient = null
