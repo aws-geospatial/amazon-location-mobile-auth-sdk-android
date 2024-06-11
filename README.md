@@ -50,7 +50,7 @@ private fun exampleCognitoLogin() {
     var locationClient = locationCredentialsProvider?.getLocationClient()
 }
 ```
-You can use the LocationCredentialsProvider to load the maplibre map. Here is an example that:
+You can use the LocationCredentialsProvider to load the maplibre map. Here is an example of that:
 
 ```
 HttpRequestUtil.setOkHttpClient(
