@@ -1,7 +1,5 @@
 package software.amazon.location.auth.utils
 
-import io.mockk.impl.recording.WasNotCalled.method
-
 object Constants {
     const val ACCESS_KEY_ID = "accessKeyId"
     const val SECRET_KEY = "secretKey"
