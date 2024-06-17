@@ -1,6 +1,42 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("com.vanniktech.maven.publish") version "0.27.0"
+}
+
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.DEFAULT, automaticRelease = true)
+    signAllPublications()
+
+    coordinates("software.amazon.location", "auth", "0.2.0")
+
+    pom {
+        name.set("Amazon Location Service Mobile Authentication SDK for Android")
+        description.set("These utilities help you authenticate when making Amazon Location Service API calls from your Android applications.")
+        inceptionYear.set("2024")
+        url.set("https://github.com/aws-geospatial/amazon-location-mobile-auth-sdk-android")
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+        developers {
+            developer {
+                id.set("aws-geospatial")
+                name.set("AWS Geospatial")
+                url.set("https://github.com/aws-geospatial")
+            }
+        }
+        scm {
+            url.set("https://github.com/aws-geospatial/amazon-location-mobile-auth-sdk-android")
+            connection.set("scm:git:git://github.com/aws-geospatial/amazon-location-mobile-auth-sdk-android")
+            developerConnection.set("scm:git:ssh://git@github.com/aws-geospatial/amazon-location-mobile-auth-sdk-android")
+        }
+    }
 }
 
 android {
