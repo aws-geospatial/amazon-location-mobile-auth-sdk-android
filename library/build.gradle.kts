@@ -60,6 +60,9 @@ android {
             )
         }
     }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -73,10 +76,10 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.10.0")
-
-    implementation("com.amazonaws:aws-android-sdk-mobile-client:2.73.0")
-    implementation("com.amazonaws:aws-android-sdk-auth-userpools:2.73.0")
-    implementation("com.amazonaws:aws-android-sdk-location:2.72.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("aws.sdk.kotlin:cognitoidentity:1.2.21")
+    implementation("aws.sdk.kotlin:location:1.2.21")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.20")

@@ -5,12 +5,16 @@ These utilities help you authenticate when making [Amazon Location Service](http
 ## Installation
 
 This authentication SDK works with the overall AWS SDK. Both SDKs are published to Maven Central.
+Check the [latest version](https://mvnrepository.com/artifact/software.amazon.location/auth) of auth
+SDK on Maven Central.
 
 Add the following lines to the dependencies section of your build.gradle file in Android Studio:
 
 ```
 implementation("software.amazon.location:auth:0.0.2")
-implementation("com.amazonaws:aws-android-sdk-location:2.72.0")
+implementation("aws.sdk.kotlin:location:1.2.21")
+implementation("org.maplibre.gl:android-sdk:11.0.0-pre5")
+implementation("com.squareup.okhttp3:okhttp:4.12.0")
 ```
 
 ## Usage
@@ -18,39 +22,60 @@ implementation("com.amazonaws:aws-android-sdk-location:2.72.0")
 Import the following classes in your code:
 
 ```
-import com.amazonaws.services.geo.AmazonLocationClient
+import aws.sdk.kotlin.services.location.LocationClient
 
 import software.amazon.location.auth.AuthHelper
 import software.amazon.location.auth.LocationCredentialsProvider
+import software.amazon.location.auth.AwsSignerInterceptor
+import org.maplibre.android.module.http.HttpRequestUtil
+import okhttp3.OkHttpClient
 ```
 
-You can create an AuthHelper and use it with the AWS SDK:
+You can create an AuthHelper and use it with the AWS Kotlin SDK:
 
 ```
 // Create an authentication helper instance using an Amazon Location API Key
 private fun exampleAPIKeyLogin() {
-        var authHelper = AuthHelper(applicationContext)
-        var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithApiKey("My-Amazon-Location-API-Key")
-        var locationClient = authHelper.getLocationClient(locationCredentialsProvider.getCredentialsProvider())
+    var authHelper = AuthHelper(applicationContext)
+    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithApiKey("My-Amazon-Location-API-Key")
+    var locationClient = locationCredentialsProvider?.getLocationClient()
 }
 ```
 
 ```
 // Create an authentication helper using credentials from Cognito
 private fun exampleCognitoLogin() {
-        var authHelper = AuthHelper(applicationContext)
-        var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCognitoIdentityPool("My-Cognito-Identity-Pool-Id")
-        var locationClient = authHelper.getLocationClient(locationCredentialsProvider.getCredentialsProvider())
+    var authHelper = AuthHelper(applicationContext)
+    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCognitoIdentityPool("My-Cognito-Identity-Pool-Id")
+    var locationClient = locationCredentialsProvider?.getLocationClient()
 }
 ```
-
-You can use the AmazonLocationClient to make calls to Amazon Location Service. Here is an example that searches for places near a specified latitude and longitude:
+You can use the LocationCredentialsProvider to load the maplibre map. Here is an example of that:
 
 ```
-var searchPlaceIndexForPositionRequest = SearchPlaceIndexForPositionRequest()
-    .withIndexName("My-Place-Index-Name")
-    .withPosition(arrayListOf(30.405423, -97.718833))
-var nearbyPlaces = locationClient.searchPlaceIndexForPosition(searchPlaceIndexForPositionRequest)
+HttpRequestUtil.setOkHttpClient(
+    OkHttpClient.Builder()
+        .addInterceptor(
+            AwsSignerInterceptor(
+                "geo",
+                "My-aws-region",
+                locationCredentialsProvider
+            )
+        )
+        .build()
+)
+```
+
+You can use the LocationClient to make calls to Amazon Location Service. Here is an example that searches for places near a specified latitude and longitude:
+
+```
+val searchPlaceIndexForPositionRequest = SearchPlaceIndexForPositionRequest {
+       indexName = "My-Place-Index-Name"
+       position = listOf(30.405423, -97.718833)
+       maxResults = MAX_RESULT
+       language = "PREFERRED-LANGUAGE"
+   }
+val nearbyPlaces = locationClient.searchPlaceIndexForPosition(request)
 ```
 
 ## Security
