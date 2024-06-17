@@ -28,3 +28,6 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+      
+      - name: Build with Gradle
+        run: ./gradlew build
