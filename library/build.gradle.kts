@@ -6,6 +6,16 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.27.0"
 }
 
+publishing {
+    repositories {
+        maven {
+            name = "AuthSDK"
+            url = uri("https://aws.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials(PasswordCredentials::class)
+        }
+    }
+}
+
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.DEFAULT, automaticRelease = true)
     signAllPublications()
