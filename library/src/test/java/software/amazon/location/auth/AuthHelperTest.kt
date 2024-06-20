@@ -17,8 +17,6 @@ import software.amazon.location.auth.utils.Constants
 import software.amazon.location.auth.utils.Constants.TEST_IDENTITY_POOL_ID
 
 
-private const val TEST_API_KEY = "dummyApiKey"
-
 class AuthHelperTest {
 
     private lateinit var context: Context
@@ -70,11 +68,5 @@ class AuthHelperTest {
                 )
             assertNotNull(provider)
         }
-    }
-
-    @Test
-    fun `authenticateWithApiKey creates LocationCredentialsProvider`() {
-        val provider = authHelper.authenticateWithApiKey(TEST_API_KEY)
-        assertNotNull(provider)
     }
 }

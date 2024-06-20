@@ -71,16 +71,4 @@ class AuthHelper(private val context: Context) {
             locationCredentialsProvider // Return the generated locationCredentialsProvider
         }
     }
-
-    /**
-     * Authenticates using an API key.
-     * @param apiKey The API key for authentication.
-     * @return A LocationCredentialsProvider instance.
-     */
-    fun authenticateWithApiKey(
-        apiKey: String,
-    ): LocationCredentialsProvider = LocationCredentialsProvider(
-        context,
-        apiKey,
-    )
 }
