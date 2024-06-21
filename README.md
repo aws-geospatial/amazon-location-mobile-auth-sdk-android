@@ -1,6 +1,6 @@
 # Amazon Location Service Mobile Authentication SDK for Android
 
-These utilities help you authenticate when making [Amazon Location Service](https://aws.amazon.com/location/) API calls from your Android applications. This specifically helps when using [Amazon Cognito](https://docs.aws.amazon.com/location/latest/developerguide/authenticating-using-cognito.html) or [API keys](https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html) as the authentication method.
+These utilities help you authenticate when making [Amazon Location Service](https://aws.amazon.com/location/) API calls from your Android applications. This specifically helps when using [Amazon Cognito](https://docs.aws.amazon.com/location/latest/developerguide/authenticating-using-cognito.html) as the authentication method.
 
 ## Installation
 
@@ -32,15 +32,6 @@ import okhttp3.OkHttpClient
 ```
 
 You can create an AuthHelper and use it with the AWS Kotlin SDK:
-
-```
-// Create an authentication helper instance using an Amazon Location API Key
-private fun exampleAPIKeyLogin() {
-    var authHelper = AuthHelper(applicationContext)
-    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithApiKey("My-Amazon-Location-API-Key")
-    var locationClient = locationCredentialsProvider?.getLocationClient()
-}
-```
 
 ```
 // Create an authentication helper using credentials from Cognito

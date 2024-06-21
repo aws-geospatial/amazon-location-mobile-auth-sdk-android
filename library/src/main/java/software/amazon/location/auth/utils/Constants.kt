@@ -17,6 +17,5 @@ object Constants {
     const val REGION= "region"
     const val METHOD= "method"
     const val IDENTITY_POOL_ID= "identityPoolId"
-    const val API_KEY = "apiKey"
     const val DEFAULT_ENCODING = "UTF-8"
 }

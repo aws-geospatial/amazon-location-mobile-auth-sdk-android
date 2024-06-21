@@ -7,7 +7,6 @@ object Constants {
     const val EXPIRATION = "expiration"
     const val METHOD = "method"
     const val IDENTITY_POOL_ID = "identityPoolId"
-    const val API_KEY = "apiKey"
     const val REGION = "region"
     const val HEADER_HOST = "Host"
     const val HEADER_X_AMZ_SECURITY_TOKEN = "x-amz-security-token"
