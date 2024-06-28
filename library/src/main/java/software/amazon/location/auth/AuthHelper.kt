@@ -73,6 +73,12 @@ class AuthHelper(private val context: Context) {
         }
     }
 
+    /**
+     * Authenticates using a Cognito Identity Pool ID and a specified CredentialsProvider.
+     * @param identityPoolId The identity pool id.
+     * @param credentialsProvider The CredentialsProvider from AWS kotlin SDK.
+     * @return A LocationCredentialsProvider object.
+     */
     suspend fun authenticateWithCredentialsProvider(
         identityPoolId: String,
         credentialsProvider: CredentialsProvider?
