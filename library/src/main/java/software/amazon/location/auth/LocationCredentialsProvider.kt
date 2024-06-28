@@ -113,7 +113,7 @@ class LocationCredentialsProvider {
     }
 
     /**
-     * Initializes the Cognito credentials provider using the provided credentials provider, region, and identity pool ID.
+     * Initializes the Location client with custom CredentialsProvider
      *
      * This method generates a Cognito identity client if not already present, retrieves an identity ID using the
      * provided identity pool ID, and initializes the `CognitoCredentialsProvider` with the resolved credentials.
@@ -128,6 +128,12 @@ class LocationCredentialsProvider {
         setCustomCredentials(credentialsProvider, region)
     }
 
+    /**
+     * Sets custom credentials using the provided credentials provider and region.
+     *
+     * @param credentialsProvider The provider for AWS credentials, which is used to resolve AWS access credentials.
+     * @param region The AWS region to be used for initializing the location client.
+     */
     private suspend fun setCustomCredentials(credentialsProvider: CredentialsProvider, region: String) {
         val credentials = credentialsProvider.resolve()
         customCredentials = aws.sdk.kotlin.services.cognitoidentity.model.Credentials.invoke {
