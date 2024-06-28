@@ -74,22 +74,21 @@ class AuthHelper(private val context: Context) {
     }
 
     /**
-     * Authenticates using a Cognito Identity Pool ID and a specified CredentialsProvider.
-     * @param identityPoolId The identity pool id.
+     * Authenticates using a region and a specified CredentialsProvider.
+     * @param region The AWS region as a string.
      * @param credentialsProvider The CredentialsProvider from AWS kotlin SDK.
      * @return A LocationCredentialsProvider object.
      */
     suspend fun authenticateWithCredentialsProvider(
-        identityPoolId: String,
-        credentialsProvider: CredentialsProvider?
+        region: String,
+        credentialsProvider: CredentialsProvider
     ): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
                 context,
-                identityPoolId,
-                AwsRegions.fromName(identityPoolId.split(":")[0]),
+                AwsRegions.fromName(region),
             )
-            locationCredentialsProvider.verifyAndRefreshCredentials(credentialsProvider)
+            locationCredentialsProvider.initializeLocationClient(credentialsProvider)
             locationCredentialsProvider
         }
     }

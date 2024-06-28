@@ -2,8 +2,12 @@ package software.amazon.location.auth
 
 import android.content.Context
 import aws.sdk.kotlin.services.cognitoidentity.CognitoIdentityClient
+import aws.sdk.kotlin.services.cognitoidentity.model.Credentials
 import aws.sdk.kotlin.services.location.LocationClient
 import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
+import aws.smithy.kotlin.runtime.time.Instant
+import aws.smithy.kotlin.runtime.time.epochMilliseconds
+import aws.smithy.kotlin.runtime.time.fromEpochMilliseconds
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -17,6 +21,7 @@ import software.amazon.location.auth.utils.AwsRegions
 import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
 import software.amazon.location.auth.utils.Constants.EXPIRATION
 import software.amazon.location.auth.utils.Constants.IDENTITY_POOL_ID
+import software.amazon.location.auth.utils.Constants.METHOD
 import software.amazon.location.auth.utils.Constants.REGION
 import software.amazon.location.auth.utils.Constants.SECRET_KEY
 import software.amazon.location.auth.utils.Constants.SESSION_TOKEN
@@ -56,6 +61,17 @@ class CustomCredentialsProviderTest {
 
     @Test
     fun `getCredentialsProvider returns cognito provider successfully with custom credential`() {
+        val expirationTime =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000) // 10 seconds in the future
+        val mockCredentials =
+            Credentials.invoke {
+                expiration = expirationTime
+                secretKey = "test"
+                accessKeyId = "test"
+                sessionToken = "test"
+            }
+        every { anyConstructed<CognitoCredentialsProvider>().getCachedCredentials() } returns mockCredentials
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns ""
         every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
         every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
@@ -64,7 +80,7 @@ class CustomCredentialsProviderTest {
         val provider =
             LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
         runBlocking {
-            provider.verifyAndRefreshCredentials(credentialsProvider)
+            provider.verifyAndRefreshCredentials()
             assertNotNull(provider.getCredentialsProvider())
         }
     }

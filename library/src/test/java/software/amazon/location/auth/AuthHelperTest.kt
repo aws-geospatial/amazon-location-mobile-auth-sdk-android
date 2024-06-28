@@ -3,6 +3,7 @@ package software.amazon.location.auth
 import android.content.Context
 import aws.sdk.kotlin.services.cognitoidentity.CognitoIdentityClient
 import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -43,6 +44,8 @@ class AuthHelperTest {
         every { anyConstructed<EncryptedSharedPreferences>().get(Constants.EXPIRATION) } returns "11111"
         every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
         every { anyConstructed<LocationCredentialsProvider>().generateCognitoIdentityClient("us-east-1") } returns cognitoIdentityClient
+        coEvery { anyConstructed<LocationCredentialsProvider>().initializeLocationClient(any()) } just runs
+        coEvery { anyConstructed<LocationCredentialsProvider>().isCredentialsValid() } returns true
         every { anyConstructed<LocationCredentialsProvider>().initPreference(context) } just runs
         every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
     }
@@ -81,7 +84,7 @@ class AuthHelperTest {
         runBlocking {
             val provider =
                 authHelper.authenticateWithCredentialsProvider(
-                    TEST_IDENTITY_POOL_ID,
+                    "us-east-1",
                     credentialsProvider
                 )
             assertNotNull(provider)
