@@ -23,7 +23,7 @@ const val PREFS_NAME = "software.amazon.location.auth"
 class LocationCredentialsProvider {
     private var context: Context
     private var cognitoCredentialsProvider: CognitoCredentialsProvider? = null
-    private var securePreferences: EncryptedSharedPreferences
+    private var securePreferences: EncryptedSharedPreferences? = null
     private var locationClient: LocationClient? = null
     private var cognitoIdentityClient: CognitoIdentityClient? = null
 
@@ -35,11 +35,10 @@ class LocationCredentialsProvider {
      */
     constructor(context: Context, identityPoolId: String, region: AwsRegions) {
         this.context = context
-        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
-        securePreferences.initEncryptedSharedPreferences()
-        securePreferences.put(METHOD, "cognito")
-        securePreferences.put(IDENTITY_POOL_ID, identityPoolId)
-        securePreferences.put(REGION, region.regionName)
+        initPreference(context)
+        securePreferences?.put(METHOD, "cognito")
+        securePreferences?.put(IDENTITY_POOL_ID, identityPoolId)
+        securePreferences?.put(REGION, region.regionName)
     }
 
     /**
@@ -49,14 +48,13 @@ class LocationCredentialsProvider {
      */
     constructor(context: Context) {
         this.context = context
-        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
-        securePreferences.initEncryptedSharedPreferences()
-        val method = securePreferences.get(METHOD)
+        initPreference(context)
+        val method = securePreferences?.get(METHOD)
         if (method === null) throw Exception("No credentials found")
         when (method) {
             "cognito" -> {
-                val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
-                val region = securePreferences.get(REGION)
+                val identityPoolId = securePreferences?.get(IDENTITY_POOL_ID)
+                val region = securePreferences?.get(REGION)
                 if (identityPoolId === null || region === null) throw Exception("No credentials found")
                 cognitoCredentialsProvider = CognitoCredentialsProvider(context)
             }
@@ -64,6 +62,11 @@ class LocationCredentialsProvider {
                 throw Exception("No credentials found")
             }
         }
+    }
+
+    fun initPreference(context: Context) {
+        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
+        securePreferences?.initEncryptedSharedPreferences()
     }
 
     /**
@@ -75,23 +78,57 @@ class LocationCredentialsProvider {
      *
      * @throws Exception if the identity pool ID or region is not found, or if credential generation fails.
      */
-    suspend fun verifyAndRefreshCredentials() {
-        val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
-        val region = securePreferences.get(REGION)
+    suspend fun verifyAndRefreshCredentials(credentialsProvider: CredentialsProvider? = null) {
+        val identityPoolId = securePreferences?.get(IDENTITY_POOL_ID)
+        val region = securePreferences?.get(REGION)
         if (identityPoolId === null || region === null) throw Exception("No credentials found")
-        val isCredentialsAvailable = try {
-            cognitoCredentialsProvider = CognitoCredentialsProvider(context)
-            true
-        } catch (e: Exception) {
-            false
-        }
-        if (!isCredentialsAvailable) {
-            generateCredentials(region, identityPoolId)
-        } else {
-            if (!isCredentialsValid()) {
-                generateCredentials(region, identityPoolId)
+        if (credentialsProvider == null) {
+            val isCredentialsAvailable = try {
+                cognitoCredentialsProvider = CognitoCredentialsProvider(context)
+                true
+            } catch (e: Exception) {
+                false
             }
+            if (!isCredentialsAvailable) {
+                generateCredentials(region, identityPoolId)
+            } else {
+                if (!isCredentialsValid()) {
+                    generateCredentials(region, identityPoolId)
+                }
+            }
+        } else {
+            initializeCognitoCredentialsProvider(credentialsProvider, region, identityPoolId)
         }
+    }
+
+    /**
+     * Initializes the Cognito credentials provider using the provided credentials provider, region, and identity pool ID.
+     *
+     * This method generates a Cognito identity client if not already present, retrieves an identity ID using the
+     * provided identity pool ID, and initializes the `CognitoCredentialsProvider` with the resolved credentials.
+     *
+     * @param credentialsProvider The provider for AWS credentials.
+     * @param region The AWS region where the identity pool is located.
+     * @param identityPoolId The ID of the Cognito identity pool.
+     * @throws Exception if the identity ID cannot be retrieved.
+     */
+    private suspend fun initializeCognitoCredentialsProvider(credentialsProvider: CredentialsProvider, region: String, identityPoolId: String) {
+        if (cognitoIdentityClient == null) {
+            cognitoIdentityClient = generateCognitoIdentityClient(region)
+        }
+        val getIdResponse = cognitoIdentityClient?.getId(GetIdRequest { this.identityPoolId = identityPoolId })
+        val identityId = getIdResponse?.identityId ?: throw Exception("Failed to get identity ID")
+        val credentials = credentialsProvider.resolve()
+        cognitoCredentialsProvider = CognitoCredentialsProvider(
+            context,
+            identityId,
+            aws.sdk.kotlin.services.cognitoidentity.model.Credentials {
+                accessKeyId = credentials.accessKeyId
+                secretKey = credentials.secretAccessKey
+                sessionToken = credentials.sessionToken
+                expiration = credentials.expiration
+            }
+        )
     }
 
 
@@ -105,8 +142,8 @@ class LocationCredentialsProvider {
      * @throws Exception if the AWS region is not found in secure preferences.
      */
     fun getLocationClient(): LocationClient? {
-        val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
-        val region = securePreferences.get(REGION)
+        val identityPoolId = securePreferences?.get(IDENTITY_POOL_ID)
+        val region = securePreferences?.get(REGION)
         if (identityPoolId === null || region === null) throw Exception("No credentials found")
         if (locationClient == null) {
             val credentialsProvider = createCredentialsProvider()
@@ -151,6 +188,7 @@ class LocationCredentialsProvider {
                 accessKeyId = getCredentialsProvider()?.accessKeyId!!,
                 secretAccessKey = getCredentialsProvider()?.secretKey!!,
                 sessionToken = getCredentialsProvider()?.sessionToken,
+                expiration = getCredentialsProvider()?.expiration
             )
         )
     }

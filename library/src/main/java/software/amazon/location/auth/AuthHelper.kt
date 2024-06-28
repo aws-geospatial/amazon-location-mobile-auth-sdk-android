@@ -1,6 +1,7 @@
 package software.amazon.location.auth
 
 import android.content.Context
+import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import software.amazon.location.auth.utils.AwsRegions
@@ -69,6 +70,21 @@ class AuthHelper(private val context: Context) {
             )
             locationCredentialsProvider.verifyAndRefreshCredentials()
             locationCredentialsProvider // Return the generated locationCredentialsProvider
+        }
+    }
+
+    suspend fun authenticateWithCredentialsProvider(
+        identityPoolId: String,
+        credentialsProvider: CredentialsProvider?
+    ): LocationCredentialsProvider {
+        return withContext(Dispatchers.IO) {
+            val locationCredentialsProvider = LocationCredentialsProvider(
+                context,
+                identityPoolId,
+                AwsRegions.fromName(identityPoolId.split(":")[0]),
+            )
+            locationCredentialsProvider.verifyAndRefreshCredentials(credentialsProvider)
+            locationCredentialsProvider
         }
     }
 }
