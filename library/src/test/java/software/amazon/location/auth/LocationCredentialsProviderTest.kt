@@ -82,6 +82,17 @@ class LocationCredentialsProviderTest {
 
     @Test
     fun `getCredentialsProvider returns cognito provider successfully`() {
+        val expirationTime =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000) // 10 seconds in the future
+        val mockCredentials =
+            Credentials.invoke {
+                expiration = expirationTime
+                secretKey = "test"
+                accessKeyId = "test"
+                sessionToken = "test"
+            }
+        every { anyConstructed<CognitoCredentialsProvider>().getCachedCredentials() } returns mockCredentials
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns ""
         every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
         every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
@@ -107,6 +118,7 @@ class LocationCredentialsProviderTest {
                 sessionToken = "test"
             }
         every { anyConstructed<CognitoCredentialsProvider>().getCachedCredentials() } returns mockCredentials
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns ""
         every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
         every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
