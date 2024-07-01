@@ -4,14 +4,14 @@ These utilities help you authenticate when making [Amazon Location Service](http
 
 ## Installation
 
-This authentication SDK works with the overall AWS SDK. Both SDKs are published to Maven Central.
+This authentication SDK works with the overall AWS Kotlin SDK. Both SDKs are published to Maven Central.
 Check the [latest version](https://mvnrepository.com/artifact/software.amazon.location/auth) of auth
 SDK on Maven Central.
 
 Add the following lines to the dependencies section of your build.gradle file in Android Studio:
 
 ```
-implementation("software.amazon.location:auth:0.0.2")
+implementation("software.amazon.location:auth:0.2.4")
 implementation("aws.sdk.kotlin:location:1.2.21")
 implementation("org.maplibre.gl:android-sdk:11.0.0-pre5")
 implementation("com.squareup.okhttp3:okhttp:4.12.0")
@@ -34,10 +34,19 @@ import okhttp3.OkHttpClient
 You can create an AuthHelper and use it with the AWS Kotlin SDK:
 
 ```
-// Create an authentication helper using credentials from Cognito
+// Create a credentail provider using Identity Pool Id with AuthHelper
 private fun exampleCognitoLogin() {
     var authHelper = AuthHelper(applicationContext)
     var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCognitoIdentityPool("My-Cognito-Identity-Pool-Id")
+    var locationClient = locationCredentialsProvider?.getLocationClient()
+}
+
+OR
+
+// Create a credentail provider using custom credential provider with AuthHelper
+private fun exampleCustomCredentialLogin() {
+    var authHelper = AuthHelper(applicationContext)
+    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCredentialsProvider("MY-AWS-REGION", "MY-CUSTOM-CREDENTIAL-PROVIDER")
     var locationClient = locationCredentialsProvider?.getLocationClient()
 }
 ```
@@ -49,7 +58,7 @@ HttpRequestUtil.setOkHttpClient(
         .addInterceptor(
             AwsSignerInterceptor(
                 "geo",
-                "My-aws-region",
+                "MY-AWS-REGION",
                 locationCredentialsProvider
             )
         )
