@@ -1,6 +1,7 @@
 package software.amazon.location.auth
 
 import android.content.Context
+import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import software.amazon.location.auth.utils.AwsRegions
@@ -73,14 +74,22 @@ class AuthHelper(private val context: Context) {
     }
 
     /**
-     * Authenticates using an API key.
-     * @param apiKey The API key for authentication.
-     * @return A LocationCredentialsProvider instance.
+     * Authenticates using a region and a specified CredentialsProvider.
+     * @param region The AWS region as a string.
+     * @param credentialsProvider The CredentialsProvider from AWS kotlin SDK.
+     * @return A LocationCredentialsProvider object.
      */
-    fun authenticateWithApiKey(
-        apiKey: String,
-    ): LocationCredentialsProvider = LocationCredentialsProvider(
-        context,
-        apiKey,
-    )
+    suspend fun authenticateWithCredentialsProvider(
+        region: String,
+        credentialsProvider: CredentialsProvider
+    ): LocationCredentialsProvider {
+        return withContext(Dispatchers.IO) {
+            val locationCredentialsProvider = LocationCredentialsProvider(
+                context,
+                AwsRegions.fromName(region),
+            )
+            locationCredentialsProvider.initializeLocationClient(credentialsProvider)
+            locationCredentialsProvider
+        }
+    }
 }
