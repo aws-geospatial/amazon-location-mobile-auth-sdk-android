@@ -1,0 +1,21 @@
+name: Run Unit Tests for Android
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+jobs:
+  test-android:
+    name: Test Android
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Run Unit Tests
+        run: |
+          ./gradlew testDebugUnitTest

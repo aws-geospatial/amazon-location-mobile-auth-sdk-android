@@ -107,6 +107,32 @@ class LocationCredentialsProviderTest {
     }
 
     @Test
+    fun `initializeLocationClient`() {
+        val expirationTime =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000) // 10 seconds in the future
+        val mockCredentials =
+            Credentials.invoke {
+                expiration = expirationTime
+                secretKey = "test"
+                accessKeyId = "test"
+                sessionToken = "test"
+            }
+        every { anyConstructed<CognitoCredentialsProvider>().getCachedCredentials() } returns mockCredentials
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns ""
+        every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
+        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "test"
+        every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "11111"
+        val provider =
+            LocationCredentialsProvider(context, TEST_IDENTITY_POOL_ID, AwsRegions.US_EAST_1)
+        runBlocking {
+            provider.initializeLocationClient(credentialsProvider)
+            assertNotNull(provider.getLocationClient())
+        }
+    }
+
+    @Test
     fun `isCredentialsValid returns true when credentials are valid`() {
         val expirationTime =
             Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000) // 10 seconds in the future
