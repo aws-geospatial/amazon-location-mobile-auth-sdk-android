@@ -25,5 +25,5 @@ jobs:
         if: always()
         with:
           name: test-results
-          path: app/build/reports/androidTests/connected/
+          path: library/build/reports/tests/testDebugUnitTest/
           retention-days: 1
