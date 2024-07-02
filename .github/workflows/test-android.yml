@@ -19,3 +19,11 @@ jobs:
       - name: Run Unit Tests
         run: |
           ./gradlew testDebugUnitTest
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: test-results
+          path: app/build/reports/androidTests/connected/
+          retention-days: 1
