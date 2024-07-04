@@ -75,9 +75,29 @@ class AuthHelper(private val context: Context) {
 
     /**
      * Authenticates using a region and a specified CredentialsProvider.
+     *
+     * For example, to get credentials from AWS Kotlin SDK:
+     * 1. Use `CognitoIdentityClient` to call `.getId` to get the identity ID:
+     *    ``` kotlin
+     *    val identityId = cognitoIdentityClient.getId(GetIdRequest { this.identityPoolId = identityPoolId }).identityId
+     *    ```
+     *
+     * 2. Use `CognitoIdentityClient` to call `.getCredentialsForIdentity` with the identity ID to get the credentials:
+     *    ``` kotlin
+     *    val credentials = cognitoIdentityClient.getCredentialsForIdentity(GetCredentialsForIdentityRequest { this.identityId = identityId }).credentials
+     *    ```
+     *
+     *
+     * To create a `StaticCredentialsProvider` as a `CredentialsProvider` from the obtained credentials:
+     * 1. Use the credentials obtained in the previous steps:
+     *    ``` kotlin
+     *    val staticCredentialsProvider = StaticCredentialsProvider(credentials)
+     *    ```
+     *
+     *
      * @param region The AWS region as a string.
-     * @param credentialsProvider The CredentialsProvider from AWS kotlin SDK.
-     * @return A LocationCredentialsProvider object.
+     * @param credentialsProvider The `CredentialsProvider` from AWS Kotlin SDK (`aws.smithy.kotlin.runtime.auth.awscredentials`).
+     * @return A `LocationCredentialsProvider` object.
      */
     suspend fun authenticateWithCredentialsProvider(
         region: String,
