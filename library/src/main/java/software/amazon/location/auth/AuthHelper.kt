@@ -91,9 +91,15 @@ class AuthHelper(private val context: Context) {
      * To create a `StaticCredentialsProvider` as a `CredentialsProvider` from the obtained credentials:
      * 1. Use the credentials obtained in the previous steps:
      *    ``` kotlin
-     *    val staticCredentialsProvider = StaticCredentialsProvider(credentials)
+     *    val staticCredentialsProvider = StaticCredentialsProvider(
+     *          aws.smithy.kotlin.runtime.auth.awscredentials.Credentials.invoke(
+     *                 accessKeyId = credentials.accessKeyId,
+     *                 secretAccessKey = credentials.secretKey,
+     *                 sessionToken = credentials.sessionToken,
+     *                 expiration = credentials.expiration
+     *          )
+     *    )
      *    ```
-     *
      *
      * @param region The AWS region as a string.
      * @param credentialsProvider The `CredentialsProvider` from AWS Kotlin SDK (`aws.smithy.kotlin.runtime.auth.awscredentials`).
