@@ -24,12 +24,14 @@ class AuthHelperTest {
     private lateinit var context: Context
     private lateinit var authHelper: AuthHelper
     private lateinit var credentialsProvider: CredentialsProvider
+    private lateinit var encryptedSharedPreferences: EncryptedSharedPreferences
     private lateinit var cognitoIdentityClient: CognitoIdentityClient
     @Before
     fun setUp() {
         context = mockk(relaxed = true)
         authHelper = AuthHelper(context)
         credentialsProvider = mockk(relaxed = true)
+        encryptedSharedPreferences = mockk(relaxed = true)
         cognitoIdentityClient = mockk(relaxed = true)
         mockkConstructor(EncryptedSharedPreferences::class)
         mockkConstructor(LocationCredentialsProvider::class)
@@ -46,7 +48,7 @@ class AuthHelperTest {
         every { anyConstructed<LocationCredentialsProvider>().generateCognitoIdentityClient("us-east-1") } returns cognitoIdentityClient
         coEvery { anyConstructed<LocationCredentialsProvider>().initializeLocationClient(any()) } just runs
         coEvery { anyConstructed<LocationCredentialsProvider>().isCredentialsValid() } returns true
-        every { anyConstructed<LocationCredentialsProvider>().initPreference(context) } just runs
+        every { anyConstructed<LocationCredentialsProvider>().initPreference(context) } returns encryptedSharedPreferences
         every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
     }
 

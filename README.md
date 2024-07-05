@@ -46,7 +46,7 @@ OR
 // Create a credentail provider using custom credential provider with AuthHelper
 private fun exampleCustomCredentialLogin() {
     var authHelper = AuthHelper(applicationContext)
-    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCredentialsProvider("MY-AWS-REGION", "MY-CUSTOM-CREDENTIAL-PROVIDER")
+    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCredentialsProvider("MY-AWS-REGION", MY-CUSTOM-CREDENTIAL-PROVIDER)
     var locationClient = locationCredentialsProvider?.getLocationClient()
 }
 ```
