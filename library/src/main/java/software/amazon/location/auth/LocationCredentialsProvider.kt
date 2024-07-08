@@ -11,7 +11,6 @@ import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
 import aws.smithy.kotlin.runtime.time.Instant
 import aws.smithy.kotlin.runtime.time.epochMilliseconds
 import software.amazon.location.auth.utils.AwsRegions
-import software.amazon.location.auth.utils.Constants.API_KEY
 import software.amazon.location.auth.utils.Constants.IDENTITY_POOL_ID
 import software.amazon.location.auth.utils.Constants.METHOD
 import software.amazon.location.auth.utils.Constants.REGION
@@ -19,12 +18,13 @@ import software.amazon.location.auth.utils.Constants.REGION
 const val PREFS_NAME = "software.amazon.location.auth"
 
 /**
- * Provides credentials for accessing location-based services through Cognito or API key authentication.
+ * Provides credentials for accessing location-based services through Cognito authentication.
  */
 class LocationCredentialsProvider {
+    private var credentialsProvider: CredentialsProvider? = null
+    private var customCredentials: aws.sdk.kotlin.services.cognitoidentity.model.Credentials? = null
     private var context: Context
     private var cognitoCredentialsProvider: CognitoCredentialsProvider? = null
-    private var apiKeyProvider: ApiKeyCredentialsProvider? = null
     private var securePreferences: EncryptedSharedPreferences
     private var locationClient: LocationClient? = null
     private var cognitoIdentityClient: CognitoIdentityClient? = null
@@ -37,36 +37,33 @@ class LocationCredentialsProvider {
      */
     constructor(context: Context, identityPoolId: String, region: AwsRegions) {
         this.context = context
-        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
-        securePreferences.initEncryptedSharedPreferences()
+        securePreferences = initPreference(context)
         securePreferences.put(METHOD, "cognito")
         securePreferences.put(IDENTITY_POOL_ID, identityPoolId)
         securePreferences.put(REGION, region.regionName)
     }
 
     /**
-     * Initializes with an API key.
+     * Initializes with region.
      * @param context The application context.
-     * @param apiKey The API key for authentication.
+     * @param region The region for Cognito authentication.
      */
-    constructor(context: Context, apiKey: String) {
+    constructor(context: Context, region: AwsRegions) {
         this.context = context
-        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
-        securePreferences.initEncryptedSharedPreferences()
-        securePreferences.put(METHOD, "apiKey")
-        securePreferences.put(API_KEY, apiKey)
-        apiKeyProvider = ApiKeyCredentialsProvider(context, apiKey)
+        securePreferences = initPreference(context)
+        securePreferences.put(METHOD, "custom")
+        securePreferences.put(REGION, region.regionName)
     }
+
 
     /**
      * Initializes with cached credentials.
      * @param context The application context.
-     * @throws Exception If API key credentials are not found.
+     * @throws Exception If credentials are not found.
      */
     constructor(context: Context) {
         this.context = context
-        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
-        securePreferences.initEncryptedSharedPreferences()
+        securePreferences = initPreference(context)
         val method = securePreferences.get(METHOD)
         if (method === null) throw Exception("No credentials found")
         when (method) {
@@ -76,17 +73,14 @@ class LocationCredentialsProvider {
                 if (identityPoolId === null || region === null) throw Exception("No credentials found")
                 cognitoCredentialsProvider = CognitoCredentialsProvider(context)
             }
-
-            "apiKey" -> {
-                val apiKey = securePreferences.get(API_KEY)
-                if (apiKey === null) throw Exception("No credentials found")
-                apiKeyProvider = ApiKeyCredentialsProvider(context, apiKey)
-            }
-
             else -> {
                 throw Exception("No credentials found")
             }
         }
+    }
+
+    fun initPreference(context: Context): EncryptedSharedPreferences {
+        return EncryptedSharedPreferences(context, PREFS_NAME).apply { initEncryptedSharedPreferences() }
     }
 
     /**
@@ -117,6 +111,39 @@ class LocationCredentialsProvider {
         }
     }
 
+    /**
+     * Initializes the Location client with custom CredentialsProvider
+     *
+     * This method generates a Cognito identity client if not already present, retrieves an identity ID using the
+     * provided identity pool ID, and initializes the `CognitoCredentialsProvider` with the resolved credentials.
+     *
+     * @param credentialsProvider The provider for AWS credentials.
+     */
+    suspend fun initializeLocationClient(credentialsProvider: CredentialsProvider) {
+        val region = securePreferences.get(REGION)
+        if (region === null) throw Exception("No credentials found")
+
+        this.credentialsProvider = credentialsProvider
+        setCustomCredentials(credentialsProvider, region)
+    }
+
+    /**
+     * Sets custom credentials using the provided credentials provider and region.
+     *
+     * @param credentialsProvider The provider for AWS credentials, which is used to resolve AWS access credentials.
+     * @param region The AWS region to be used for initializing the location client.
+     */
+    private suspend fun setCustomCredentials(credentialsProvider: CredentialsProvider, region: String) {
+        val credentials = credentialsProvider.resolve()
+        customCredentials = aws.sdk.kotlin.services.cognitoidentity.model.Credentials.invoke {
+            accessKeyId = credentials.accessKeyId
+            secretKey = credentials.secretAccessKey
+            sessionToken = credentials.sessionToken
+            expiration = credentials.expiration
+        }
+        locationClient = generateLocationClient(region, credentialsProvider)
+    }
+
 
     /**
      * Retrieves the LocationClient instance with configured AWS credentials.
@@ -128,9 +155,8 @@ class LocationCredentialsProvider {
      * @throws Exception if the AWS region is not found in secure preferences.
      */
     fun getLocationClient(): LocationClient? {
-        val identityPoolId = securePreferences.get(IDENTITY_POOL_ID)
         val region = securePreferences.get(REGION)
-        if (identityPoolId === null || region === null) throw Exception("No credentials found")
+        if (region === null) throw Exception("No credentials found")
         if (locationClient == null) {
             val credentialsProvider = createCredentialsProvider()
             locationClient = generateLocationClient(region, credentialsProvider)
@@ -174,6 +200,7 @@ class LocationCredentialsProvider {
                 accessKeyId = getCredentialsProvider()?.accessKeyId!!,
                 secretAccessKey = getCredentialsProvider()?.secretKey!!,
                 sessionToken = getCredentialsProvider()?.sessionToken,
+                expiration = getCredentialsProvider()?.expiration
             )
         )
     }
@@ -225,7 +252,6 @@ class LocationCredentialsProvider {
      * @param region The AWS region for the CognitoIdentityClient.
      * @return A new instance of CognitoIdentityClient.
      */
-
     fun generateCognitoIdentityClient(region: String): CognitoIdentityClient {
         return CognitoIdentityClient { this.region = region }
     }
@@ -236,9 +262,12 @@ class LocationCredentialsProvider {
      * @return True if the credentials are valid (i.e., not expired), false otherwise.
      */
     fun isCredentialsValid(): Boolean {
-        val credentials = cognitoCredentialsProvider?.getCachedCredentials()
+        val expirationTimeMillis: Long = if (cognitoCredentialsProvider == null && customCredentials != null) {
+            customCredentials?.expiration?.epochMilliseconds ?: throw Exception("Failed to get credentials")
+        } else {
+            getCredentialsProvider()?.expiration?.epochMilliseconds ?: throw Exception("Failed to get credentials")
+        }
         val currentTimeMillis = Instant.now().epochMilliseconds
-        val expirationTimeMillis = credentials?.expiration?.epochMilliseconds ?: throw Exception("Failed to get credentials")
         return currentTimeMillis < expirationTimeMillis
     }
 
@@ -248,34 +277,36 @@ class LocationCredentialsProvider {
      * @throws Exception If the Cognito provider is not initialized.
      */
     fun getCredentialsProvider(): aws.sdk.kotlin.services.cognitoidentity.model.Credentials? {
+        val method = securePreferences.get(METHOD)
+        if (method == "custom" && customCredentials != null) {
+            return customCredentials
+        }
         if (cognitoCredentialsProvider === null) throw Exception("Cognito credentials not initialized")
         return cognitoCredentialsProvider?.getCachedCredentials()
     }
 
     /**
-     * Retrieves the API key credentials provider.
-     * @return The ApiKeyCredentialsProvider instance.
-     * @throws Exception If the API key provider is not initialized.
-     */
-    fun getApiKeyProvider(): ApiKeyCredentialsProvider {
-        if (apiKeyProvider === null) throw Exception("Api key provider not initialized")
-        return apiKeyProvider!!
-    }
-
-    /**
      * Refreshes the Cognito credentials.
-     * @throws Exception If the Cognito provider is not initialized or if called for API key authentication.
+     * @throws Exception If the Cognito provider is not initialized.
      */
     suspend fun refresh() {
-        if (cognitoCredentialsProvider === null) throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
-        locationClient = null
-        cognitoCredentialsProvider?.clearCredentials()
-        verifyAndRefreshCredentials()
+        val region = securePreferences.get(REGION)
+        if (region === null) throw Exception("No credentials found")
+
+        val method = securePreferences.get(METHOD)
+        if (method == "custom" && customCredentials != null) {
+            credentialsProvider?.let { setCustomCredentials(it, region) }
+        } else {
+            if (cognitoCredentialsProvider === null) throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
+            locationClient = null
+            cognitoCredentialsProvider?.clearCredentials()
+            verifyAndRefreshCredentials()
+        }
     }
 
     /**
      * Clears the Cognito credentials.
-     * @throws Exception If the Cognito provider is not initialized or if called for API key authentication.
+     * @throws Exception If the Cognito provider is not initialized.
      */
     fun clear() {
         if (cognitoCredentialsProvider === null) throw Exception("Clear is only supported for Cognito credentials. Make sure to use the cognito constructor.")
