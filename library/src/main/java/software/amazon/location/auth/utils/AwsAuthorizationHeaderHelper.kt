@@ -10,7 +10,7 @@ import software.amazon.location.auth.utils.Constants.SIGNING_ALGORITHM
 /**
  * Sign the request with the aws authorization header
  */
-internal fun Request.awsAuthorizationHeader(
+fun Request.awsAuthorizationHeader(
     accessKeyId: String,
     accessKey: String,
     region: String,
@@ -30,7 +30,7 @@ internal fun Request.awsAuthorizationHeader(
         time
     )}"
 
-internal fun Request.signature(
+fun Request.signature(
     accessKey: String,
     region: String,
     service: String,
@@ -46,7 +46,7 @@ internal fun Request.signature(
         stringToSign(region, service, time)
     ).toHexString()
 
-internal fun Request.stringToSign(region: String, service: String, time: String) =
+fun Request.stringToSign(region: String, service: String, time: String) =
     """
     |$SIGNING_ALGORITHM
     |${time}
@@ -54,7 +54,7 @@ internal fun Request.stringToSign(region: String, service: String, time: String)
     |${hash(canonicalRequest())}
     """.trimMargin("|")
 
-internal fun Request.canonicalRequest() =
+fun Request.canonicalRequest() =
     """
     |$method
     |${canonicalUri()}

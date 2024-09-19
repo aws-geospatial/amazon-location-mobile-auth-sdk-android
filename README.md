@@ -12,7 +12,7 @@ Add the following lines to the dependencies section of your build.gradle file in
 
 ```
 implementation("software.amazon.location:auth:0.2.4")
-implementation("aws.sdk.kotlin:location:1.2.21")
+implementation("aws.sdk.kotlin:location:1.3.29")
 implementation("org.maplibre.gl:android-sdk:11.0.0-pre5")
 implementation("com.squareup.okhttp3:okhttp:4.12.0")
 ```
@@ -35,19 +35,28 @@ You can create an AuthHelper and use it with the AWS Kotlin SDK:
 
 ```
 // Create a credentail provider using Identity Pool Id with AuthHelper
-private fun exampleCognitoLogin() {
+private suspend fun exampleCognitoLogin() {
     var authHelper = AuthHelper(applicationContext)
-    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCognitoIdentityPool("My-Cognito-Identity-Pool-Id")
+    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCognitoIdentityPool("MY-COGNITO-IDENTITY-POOL-ID")
     var locationClient = locationCredentialsProvider?.getLocationClient()
 }
 
 OR
 
 // Create a credentail provider using custom credential provider with AuthHelper
-private fun exampleCustomCredentialLogin() {
+private suspend fun exampleCustomCredentialLogin() {
     var authHelper = AuthHelper(applicationContext)
     var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCredentialsProvider("MY-AWS-REGION", MY-CUSTOM-CREDENTIAL-PROVIDER)
     var locationClient = locationCredentialsProvider?.getLocationClient()
+}
+
+OR
+
+// Create a credentail provider using Api key with AuthHelper
+private suspend fun exampleApiKeyLogin() {
+    var authHelper = AuthHelper(applicationContext)
+    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithApiKey("MY-API-KEY", "MY-AWS-REGION")
+    var locationClient = locationCredentialsProvider.getLocationClient()
 }
 ```
 You can use the LocationCredentialsProvider to load the maplibre map. Here is an example of that:
@@ -57,6 +66,7 @@ HttpRequestUtil.setOkHttpClient(
     OkHttpClient.Builder()
         .addInterceptor(
             AwsSignerInterceptor(
+                applicationContext,
                 "geo",
                 "MY-AWS-REGION",
                 locationCredentialsProvider

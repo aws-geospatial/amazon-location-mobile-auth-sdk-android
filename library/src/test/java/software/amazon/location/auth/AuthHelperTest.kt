@@ -16,6 +16,7 @@ import kotlinx.coroutines.runBlocking
 import software.amazon.location.auth.utils.AwsRegions
 import software.amazon.location.auth.utils.Constants
 import software.amazon.location.auth.utils.Constants.IDENTITY_POOL_ID
+import software.amazon.location.auth.utils.Constants.TEST_API_KEY
 import software.amazon.location.auth.utils.Constants.TEST_IDENTITY_POOL_ID
 
 
@@ -40,6 +41,7 @@ class AuthHelperTest {
         every { anyConstructed<EncryptedSharedPreferences>().clear() } just runs
         every { anyConstructed<EncryptedSharedPreferences>().remove(any()) } just runs
         every { anyConstructed<EncryptedSharedPreferences>().get("region") } returns "us-east-1"
+        every { anyConstructed<EncryptedSharedPreferences>().get(Constants.API_KEY) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(Constants.ACCESS_KEY_ID) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(Constants.SECRET_KEY) } returns "test"
         every { anyConstructed<EncryptedSharedPreferences>().get(Constants.SESSION_TOKEN) } returns "test"
@@ -47,6 +49,7 @@ class AuthHelperTest {
         every { anyConstructed<EncryptedSharedPreferences>().get(IDENTITY_POOL_ID) } returns TEST_IDENTITY_POOL_ID
         every { anyConstructed<LocationCredentialsProvider>().generateCognitoIdentityClient("us-east-1") } returns cognitoIdentityClient
         coEvery { anyConstructed<LocationCredentialsProvider>().initializeLocationClient(any()) } just runs
+        coEvery { anyConstructed<LocationCredentialsProvider>().initializeLocationClient() } just runs
         coEvery { anyConstructed<LocationCredentialsProvider>().isCredentialsValid() } returns true
         every { anyConstructed<LocationCredentialsProvider>().initPreference(context) } returns encryptedSharedPreferences
         every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
@@ -89,6 +92,14 @@ class AuthHelperTest {
                     "us-east-1",
                     credentialsProvider
                 )
+            assertNotNull(provider)
+        }
+    }
+
+    @Test
+    fun `authenticateWithApiKey creates LocationCredentialsProvider`() {
+        runBlocking {
+            val provider = authHelper.authenticateWithApiKey(TEST_API_KEY,"us-east-1")
             assertNotNull(provider)
         }
     }
