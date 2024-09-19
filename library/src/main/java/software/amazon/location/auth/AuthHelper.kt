@@ -118,4 +118,22 @@ class AuthHelper(private val context: Context) {
             locationCredentialsProvider
         }
     }
+
+    /**
+     * Authenticates using an API key.
+     * @param apiKey The API key for authentication.
+     * @param region The AWS region as a string.
+     * @return A LocationCredentialsProvider instance.
+     */
+    suspend fun authenticateWithApiKey(apiKey: String, region: String): LocationCredentialsProvider {
+        return withContext(Dispatchers.IO) {
+            val locationCredentialsProvider = LocationCredentialsProvider(
+                context,
+                AwsRegions.fromName(region),
+                apiKey,
+            )
+            locationCredentialsProvider.initializeLocationClient()
+            locationCredentialsProvider
+        }
+    }
 }

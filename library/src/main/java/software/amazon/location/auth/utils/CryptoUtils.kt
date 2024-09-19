@@ -9,11 +9,11 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import software.amazon.location.auth.utils.Constants.DEFAULT_ENCODING
 
-internal const val HASHING_ALGORITHM = "SHA-256"
-internal const val MAC_ALGORITHM = "HmacSHA256"
-internal const val ENCODED_CHARACTER_REGEX = "%[0-9A-Fa-f]{2}"
+const val HASHING_ALGORITHM = "SHA-256"
+const val MAC_ALGORITHM = "HmacSHA256"
+const val ENCODED_CHARACTER_REGEX = "%[0-9A-Fa-f]{2}"
 
-internal fun hash(value: String): String {
+fun hash(value: String): String {
     val bytes = value.toByteArray()
     val md = MessageDigest.getInstance(HASHING_ALGORITHM)
     val digest = md.digest(bytes)
@@ -21,7 +21,7 @@ internal fun hash(value: String): String {
 }
 
 @Throws(Exception::class)
-internal fun hmacSha256(key: ByteArray, data: String): ByteArray {
+fun hmacSha256(key: ByteArray, data: String): ByteArray {
     val sha256Hmac = Mac.getInstance(MAC_ALGORITHM)
     val secretKey = SecretKeySpec(key, MAC_ALGORITHM)
     sha256Hmac.init(secretKey)
@@ -30,10 +30,10 @@ internal fun hmacSha256(key: ByteArray, data: String): ByteArray {
 }
 
 @Throws(Exception::class)
-internal fun hmacSha256(key: String, data: String) =
+fun hmacSha256(key: String, data: String) =
     hmacSha256(key.toByteArray(Charset.forName("utf-8")), data)
 
-internal fun ByteArray.toHexString(): String{
+fun ByteArray.toHexString(): String{
     return joinToString("") { "%02x".format(it) }
 }
 
