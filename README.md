@@ -34,7 +34,7 @@ import okhttp3.OkHttpClient
 You can create an AuthHelper and use it with the AWS Kotlin SDK:
 
 ```
-// Create a credentail provider using Identity Pool Id with AuthHelper
+// Create a credential provider using Identity Pool Id with AuthHelper
 private suspend fun exampleCognitoLogin() {
     var authHelper = AuthHelper(applicationContext)
     var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCognitoIdentityPool("MY-COGNITO-IDENTITY-POOL-ID")
@@ -43,7 +43,7 @@ private suspend fun exampleCognitoLogin() {
 
 OR
 
-// Create a credentail provider using custom credential provider with AuthHelper
+// Create a credential provider using custom credential provider with AuthHelper
 private suspend fun exampleCustomCredentialLogin() {
     var authHelper = AuthHelper(applicationContext)
     var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCredentialsProvider("MY-AWS-REGION", MY-CUSTOM-CREDENTIAL-PROVIDER)
@@ -52,11 +52,11 @@ private suspend fun exampleCustomCredentialLogin() {
 
 OR
 
-// Create a credentail provider using Api key with AuthHelper
+// Create a credential provider using Api key with AuthHelper
 private suspend fun exampleApiKeyLogin() {
     var authHelper = AuthHelper(applicationContext)
     var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithApiKey("MY-API-KEY", "MY-AWS-REGION")
-    var locationClient = locationCredentialsProvider.getLocationClient()
+    var locationClient = locationCredentialsProvider?.getLocationClient()
 }
 ```
 You can use the LocationCredentialsProvider to load the maplibre map. Here is an example of that:
