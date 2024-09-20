@@ -26,6 +26,7 @@ const val PREFS_NAME = "software.amazon.location.auth"
 class LocationCredentialsProvider {
     private var credentialsProvider: CredentialsProvider? = null
     private var customCredentials: aws.sdk.kotlin.services.cognitoidentity.model.Credentials? = null
+    private var emptyCredentials: aws.sdk.kotlin.services.cognitoidentity.model.Credentials? = null
     private var context: Context
     private var cognitoCredentialsProvider: CognitoCredentialsProvider? = null
     private var securePreferences: EncryptedSharedPreferences
@@ -184,7 +185,7 @@ class LocationCredentialsProvider {
         if (apiKey === null || region === null) throw Exception("No credentials found")
 
         val credentials = createEmptyCredentialsProvider().resolve()
-        customCredentials = aws.sdk.kotlin.services.cognitoidentity.model.Credentials.invoke {
+        emptyCredentials = aws.sdk.kotlin.services.cognitoidentity.model.Credentials.invoke {
             accessKeyId = credentials.accessKeyId
             secretKey = credentials.secretAccessKey
             sessionToken = credentials.sessionToken
@@ -274,15 +275,15 @@ class LocationCredentialsProvider {
      * @throws Exception if credentials cannot be retrieved.
      */
     private fun createCredentialsProvider(): CredentialsProvider {
-        if (getCredentialsProvider() == null || getCredentialsProvider()?.accessKeyId == null || getCredentialsProvider()?.secretKey == null) throw Exception(
+        if (getCredentialsProvider().accessKeyId == null || getCredentialsProvider().secretKey == null) throw Exception(
             "Failed to get credentials"
         )
         return StaticCredentialsProvider(
             Credentials.invoke(
-                accessKeyId = getCredentialsProvider()?.accessKeyId!!,
-                secretAccessKey = getCredentialsProvider()?.secretKey!!,
-                sessionToken = getCredentialsProvider()?.sessionToken,
-                expiration = getCredentialsProvider()?.expiration
+                accessKeyId = getCredentialsProvider().accessKeyId!!,
+                secretAccessKey = getCredentialsProvider().secretKey!!,
+                sessionToken = getCredentialsProvider().sessionToken,
+                expiration = getCredentialsProvider().expiration
             )
         )
     }
@@ -307,7 +308,7 @@ class LocationCredentialsProvider {
 
             if (identityId.isNotEmpty()) {
                 val credentials = cognitoIdentityClient?.getCredentialsForIdentity(GetCredentialsForIdentityRequest { this.identityId = identityId })
-                    ?.credentials ?: throw Exception("Failed to get  credentials")
+                    ?.credentials ?: throw Exception("Failed to get credentials")
 
                 requireNotNull(credentials.accessKeyId) { "Access key ID is null" }
                 requireNotNull(credentials.secretKey) { "Secret key is null" }
@@ -355,13 +356,12 @@ class LocationCredentialsProvider {
      * @return The Credentials instance.
      * @throws Exception If the Cognito provider is not initialized.
      */
-    fun getCredentialsProvider(): aws.sdk.kotlin.services.cognitoidentity.model.Credentials? {
-        val method = securePreferences.get(METHOD)
-        if ((method == "custom" || method == "apiKey") && customCredentials != null) {
-            return customCredentials
+    fun getCredentialsProvider(): aws.sdk.kotlin.services.cognitoidentity.model.Credentials {
+        return when (securePreferences.get(METHOD)) {
+            "apiKey" -> emptyCredentials ?: throw Exception("API key empty credentials not initialized")
+            "custom" -> customCredentials ?: throw Exception("Custom credentials not initialized")
+            else -> cognitoCredentialsProvider?.getCachedCredentials() ?: throw Exception("Cognito credentials not initialized")
         }
-        if (cognitoCredentialsProvider === null) throw Exception("Cognito credentials not initialized")
-        return cognitoCredentialsProvider?.getCachedCredentials()
     }
 
     /**

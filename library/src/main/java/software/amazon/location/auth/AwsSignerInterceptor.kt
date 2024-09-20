@@ -66,9 +66,9 @@ class AwsSignerInterceptor(
                     credentialsProvider.verifyAndRefreshCredentials()
                 }
             }
-            val accessKeyId = credentialsProvider.getCredentialsProvider()?.accessKeyId
-            val secretKey = credentialsProvider.getCredentialsProvider()?.secretKey
-            val sessionToken = credentialsProvider.getCredentialsProvider()?.sessionToken
+            val accessKeyId = credentialsProvider.getCredentialsProvider().accessKeyId
+            val secretKey = credentialsProvider.getCredentialsProvider().secretKey
+            val sessionToken = credentialsProvider.getCredentialsProvider().sessionToken
             if (!accessKeyId.isNullOrEmpty() && !secretKey.isNullOrEmpty() && !sessionToken.isNullOrEmpty() && region.isNotEmpty()) {
                 val dateMilli = Date().time
                 val host = extractHostHeader(originalRequest.url.toString())
