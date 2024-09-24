@@ -1,6 +1,7 @@
 package software.amazon.location.auth
 
 import android.content.Context
+import android.util.Log
 import aws.sdk.kotlin.runtime.auth.credentials.StaticCredentialsProvider
 import aws.sdk.kotlin.services.cognitoidentity.CognitoIdentityClient
 import aws.sdk.kotlin.services.cognitoidentity.model.GetCredentialsForIdentityRequest
@@ -8,9 +9,11 @@ import aws.sdk.kotlin.services.cognitoidentity.model.GetIdRequest
 import aws.sdk.kotlin.services.location.LocationClient
 import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
 import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
+import aws.smithy.kotlin.runtime.http.HttpException
 import aws.smithy.kotlin.runtime.time.Instant
 import aws.smithy.kotlin.runtime.time.epochMilliseconds
 import software.amazon.location.auth.utils.AwsRegions
+import software.amazon.location.auth.utils.Constants.API_KEY
 import software.amazon.location.auth.utils.Constants.IDENTITY_POOL_ID
 import software.amazon.location.auth.utils.Constants.METHOD
 import software.amazon.location.auth.utils.Constants.REGION
@@ -23,11 +26,13 @@ const val PREFS_NAME = "software.amazon.location.auth"
 class LocationCredentialsProvider {
     private var credentialsProvider: CredentialsProvider? = null
     private var customCredentials: aws.sdk.kotlin.services.cognitoidentity.model.Credentials? = null
+    private var emptyCredentials: aws.sdk.kotlin.services.cognitoidentity.model.Credentials? = null
     private var context: Context
     private var cognitoCredentialsProvider: CognitoCredentialsProvider? = null
     private var securePreferences: EncryptedSharedPreferences
     private var locationClient: LocationClient? = null
     private var cognitoIdentityClient: CognitoIdentityClient? = null
+    private var apiKeyProvider: ApiKeyCredentialsProvider? = null
 
     /**
      * Initializes with Cognito credentials.
@@ -55,6 +60,21 @@ class LocationCredentialsProvider {
         securePreferences.put(REGION, region.regionName)
     }
 
+    /**
+     * Initializes with an API key.
+     * @param context The application context.
+     * @param region The region for Cognito authentication.
+     * @param apiKey The API key for authentication.
+     */
+    constructor(context: Context, region: AwsRegions, apiKey: String) {
+        this.context = context
+        securePreferences = initPreference(context)
+        securePreferences.put(METHOD, "apiKey")
+        securePreferences.put(API_KEY, apiKey)
+        securePreferences.put(REGION, region.regionName)
+        apiKeyProvider = ApiKeyCredentialsProvider(context, apiKey)
+    }
+
 
     /**
      * Initializes with cached credentials.
@@ -72,6 +92,12 @@ class LocationCredentialsProvider {
                 val region = securePreferences.get(REGION)
                 if (identityPoolId === null || region === null) throw Exception("No credentials found")
                 cognitoCredentialsProvider = CognitoCredentialsProvider(context)
+            }
+            "apiKey" -> {
+                val apiKey = securePreferences.get(API_KEY)
+                val region = securePreferences.get(REGION)
+                if (apiKey === null || region === null) throw Exception("No credentials found")
+                apiKeyProvider = ApiKeyCredentialsProvider(context, apiKey)
             }
             else -> {
                 throw Exception("No credentials found")
@@ -144,6 +170,45 @@ class LocationCredentialsProvider {
         locationClient = generateLocationClient(region, credentialsProvider)
     }
 
+    /**
+     * Initializes the AWS Location Service client using API key.
+     *
+     * This function retrieves the API key and region from `securePreferences`,
+     * creates an empty credentials provider, and generates the `locationClient`
+     * with the provided region and API key.
+     *
+     * @throws Exception if the API key or region is not found in `securePreferences`.
+     */
+    suspend fun initializeLocationClient() {
+        val apiKey = securePreferences.get(API_KEY)
+        val region = securePreferences.get(REGION)
+        if (apiKey === null || region === null) throw Exception("No credentials found")
+
+        val credentials = createEmptyCredentialsProvider().resolve()
+        emptyCredentials = aws.sdk.kotlin.services.cognitoidentity.model.Credentials.invoke {
+            accessKeyId = credentials.accessKeyId
+            secretKey = credentials.secretAccessKey
+            sessionToken = credentials.sessionToken
+        }
+        locationClient = generateLocationClient(region, createEmptyCredentialsProvider(), apiKey)
+    }
+
+    /**
+     * Creates an empty `StaticCredentialsProvider` with no access keys or secret keys.
+     *
+     * This is useful for bypassing the default credentials provider chain when
+     * credentials are not yet available or are not required for certain operations.
+     *
+     * @return A `StaticCredentialsProvider` instance with empty credentials.
+     */
+    private fun createEmptyCredentialsProvider(): CredentialsProvider =
+        StaticCredentialsProvider(
+            Credentials.invoke(
+                accessKeyId = "",
+                secretAccessKey = "",
+                sessionToken = null,
+            ),
+        )
 
     /**
      * Retrieves the LocationClient instance with configured AWS credentials.
@@ -155,29 +220,47 @@ class LocationCredentialsProvider {
      * @throws Exception if the AWS region is not found in secure preferences.
      */
     fun getLocationClient(): LocationClient? {
-        val region = securePreferences.get(REGION)
-        if (region === null) throw Exception("No credentials found")
+        val region = securePreferences.get(REGION) ?: throw Exception("No credentials found")
+
         if (locationClient == null) {
-            val credentialsProvider = createCredentialsProvider()
-            locationClient = generateLocationClient(region, credentialsProvider)
+            val method = securePreferences.get(METHOD) ?: throw Exception("No credentials found")
+            locationClient = when (method) {
+                "apiKey" -> {
+                    val apiKey = securePreferences.get(API_KEY) ?: throw Exception("API key not found")
+                    generateLocationClient(region, createEmptyCredentialsProvider(), apiKey)
+                }
+                else -> {
+                    val credentialsProvider = createCredentialsProvider()
+                    generateLocationClient(region, credentialsProvider)
+                }
+            }
         }
         return locationClient
     }
 
+
     /**
-     * Generates a new instance of LocationClient with the specified region and credentials provider.
+     * Generates a new instance of [LocationClient] with the specified region,
+     * credentials provider, and optional API key for request signing.
      *
-     * @param region The AWS region for the LocationClient.
-     * @param credentialsProvider The credentials provider for the LocationClient.
-     * @return A new instance of LocationClient.
+     * @param region The AWS region to configure for the [LocationClient].
+     * @param credentialsProvider The credentials provider for the [LocationClient].
+     *                            It supplies the credentials required for authenticating requests.
+     * @param apiKey Optional. The API key to use for signing requests. If provided,
+     *               an [ApiKeyInterceptor] will be added to the [LocationClient].
+     * @return A new instance of [LocationClient] configured with the specified parameters.
      */
     fun generateLocationClient(
-        region: String?,
-        credentialsProvider: CredentialsProvider
+        region: String,
+        credentialsProvider: CredentialsProvider,
+        apiKey: String? = null
     ): LocationClient {
         return LocationClient {
             this.region = region
             this.credentialsProvider = credentialsProvider
+            apiKey?.let {
+                this.interceptors = mutableListOf(ApiKeyInterceptor(it))
+            }
         }
     }
 
@@ -192,15 +275,15 @@ class LocationCredentialsProvider {
      * @throws Exception if credentials cannot be retrieved.
      */
     private fun createCredentialsProvider(): CredentialsProvider {
-        if (getCredentialsProvider() == null || getCredentialsProvider()?.accessKeyId == null || getCredentialsProvider()?.secretKey == null) throw Exception(
+        if (getCredentialsProvider().accessKeyId == null || getCredentialsProvider().secretKey == null) throw Exception(
             "Failed to get credentials"
         )
         return StaticCredentialsProvider(
             Credentials.invoke(
-                accessKeyId = getCredentialsProvider()?.accessKeyId!!,
-                secretAccessKey = getCredentialsProvider()?.secretKey!!,
-                sessionToken = getCredentialsProvider()?.sessionToken,
-                expiration = getCredentialsProvider()?.expiration
+                accessKeyId = getCredentialsProvider().accessKeyId!!,
+                secretAccessKey = getCredentialsProvider().secretKey!!,
+                sessionToken = getCredentialsProvider().sessionToken,
+                expiration = getCredentialsProvider().expiration
             )
         )
     }
@@ -216,33 +299,29 @@ class LocationCredentialsProvider {
      * @throws Exception if the credential generation fails.
      */
     private suspend fun generateCredentials(region: String, identityPoolId: String) {
-        if (cognitoIdentityClient == null) {
-            cognitoIdentityClient = generateCognitoIdentityClient(region)
-        }
         try {
-            val getIdResponse = cognitoIdentityClient?.getId(GetIdRequest { this.identityPoolId = identityPoolId })
-            val identityId =
-                getIdResponse?.identityId ?: throw Exception("Failed to get identity ID")
-            if (identityId.isNotEmpty()) {
-                val getCredentialsResponse =
-                    cognitoIdentityClient?.getCredentialsForIdentity(GetCredentialsForIdentityRequest {
-                        this.identityId = identityId
-                    })
+            cognitoIdentityClient ?: run {
+                cognitoIdentityClient = generateCognitoIdentityClient(region)
+            }
+            val identityId = cognitoIdentityClient?.getId(GetIdRequest { this.identityPoolId = identityPoolId })
+                ?.identityId ?: throw Exception("Failed to get identity ID")
 
-                val credentials = getCredentialsResponse?.credentials
-                    ?: throw Exception("Failed to get credentials")
-                if (credentials.accessKeyId == null || credentials.secretKey == null || credentials.sessionToken == null) throw Exception(
-                    "Credentials generation failed"
-                )
-                cognitoCredentialsProvider = CognitoCredentialsProvider(
-                    context,
-                    identityId,
-                    credentials
-                )
+            if (identityId.isNotEmpty()) {
+                val credentials = cognitoIdentityClient?.getCredentialsForIdentity(GetCredentialsForIdentityRequest { this.identityId = identityId })
+                    ?.credentials ?: throw Exception("Failed to get credentials")
+
+                requireNotNull(credentials.accessKeyId) { "Access key ID is null" }
+                requireNotNull(credentials.secretKey) { "Secret key is null" }
+                requireNotNull(credentials.sessionToken) { "Session token is null" }
+
+                cognitoCredentialsProvider = CognitoCredentialsProvider(context, identityId, credentials)
                 locationClient = null
             }
+        } catch (e: HttpException) {
+            Log.e("Auth", "Credentials generation failed: ${e.cause} ${e.message}")
+            throw HttpException("Credentials generation failed")
         } catch (e: Exception) {
-            throw Exception("Credentials generation failed")
+            throw Exception("Credentials generation failed", e)
         }
     }
 
@@ -262,13 +341,14 @@ class LocationCredentialsProvider {
      * @return True if the credentials are valid (i.e., not expired), false otherwise.
      */
     fun isCredentialsValid(): Boolean {
-        val expirationTimeMillis: Long = if (cognitoCredentialsProvider == null && customCredentials != null) {
-            customCredentials?.expiration?.epochMilliseconds ?: throw Exception("Failed to get credentials")
-        } else {
-            getCredentialsProvider()?.expiration?.epochMilliseconds ?: throw Exception("Failed to get credentials")
-        }
-        val currentTimeMillis = Instant.now().epochMilliseconds
-        return currentTimeMillis < expirationTimeMillis
+        val method = securePreferences.get(METHOD)
+        if (method == "apiKey") return true
+
+        val expirationTimeMillis = customCredentials?.expiration?.epochMilliseconds
+            ?: cognitoCredentialsProvider?.getCachedCredentials()?.expiration?.epochMilliseconds
+            ?: throw Exception("Failed to get credentials")
+
+        return Instant.now().epochMilliseconds < expirationTimeMillis
     }
 
     /**
@@ -276,13 +356,22 @@ class LocationCredentialsProvider {
      * @return The Credentials instance.
      * @throws Exception If the Cognito provider is not initialized.
      */
-    fun getCredentialsProvider(): aws.sdk.kotlin.services.cognitoidentity.model.Credentials? {
-        val method = securePreferences.get(METHOD)
-        if (method == "custom" && customCredentials != null) {
-            return customCredentials
+    fun getCredentialsProvider(): aws.sdk.kotlin.services.cognitoidentity.model.Credentials {
+        return when (securePreferences.get(METHOD)) {
+            "apiKey" -> emptyCredentials ?: throw Exception("API key empty credentials not initialized")
+            "custom" -> customCredentials ?: throw Exception("Custom credentials not initialized")
+            else -> cognitoCredentialsProvider?.getCachedCredentials() ?: throw Exception("Cognito credentials not initialized")
         }
-        if (cognitoCredentialsProvider === null) throw Exception("Cognito credentials not initialized")
-        return cognitoCredentialsProvider?.getCachedCredentials()
+    }
+
+    /**
+     * Retrieves the API key credentials provider.
+     * @return The ApiKeyCredentialsProvider instance.
+     * @throws Exception If the API key provider is not initialized.
+     */
+    fun getApiKeyProvider(): ApiKeyCredentialsProvider {
+        if (apiKeyProvider === null) throw Exception("Api key provider not initialized")
+        return apiKeyProvider!!
     }
 
     /**
@@ -290,17 +379,24 @@ class LocationCredentialsProvider {
      * @throws Exception If the Cognito provider is not initialized.
      */
     suspend fun refresh() {
-        val region = securePreferences.get(REGION)
-        if (region === null) throw Exception("No credentials found")
+        val region = securePreferences.get(REGION) ?: throw Exception("No credentials found")
+        val method = securePreferences.get(METHOD) ?: throw Exception("No method found")
 
-        val method = securePreferences.get(METHOD)
-        if (method == "custom" && customCredentials != null) {
-            credentialsProvider?.let { setCustomCredentials(it, region) }
-        } else {
-            if (cognitoCredentialsProvider === null) throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
-            locationClient = null
-            cognitoCredentialsProvider?.clearCredentials()
-            verifyAndRefreshCredentials()
+        when (method) {
+            "apiKey" -> return
+            "custom" -> {
+                customCredentials?.let {
+                    credentialsProvider?.let { provider -> setCustomCredentials(provider, region) }
+                    return
+                }
+            }
+            else -> {
+                cognitoCredentialsProvider?.let {
+                    locationClient = null
+                    it.clearCredentials()
+                    verifyAndRefreshCredentials()
+                } ?: throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
+            }
         }
     }
 

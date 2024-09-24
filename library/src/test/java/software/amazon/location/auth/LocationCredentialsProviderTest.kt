@@ -28,12 +28,15 @@ import org.junit.Before
 import org.junit.Test
 import software.amazon.location.auth.utils.AwsRegions
 import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
+import software.amazon.location.auth.utils.Constants.API_KEY
+import software.amazon.location.auth.utils.Constants.API_KEY_TEST
 import software.amazon.location.auth.utils.Constants.EXPIRATION
 import software.amazon.location.auth.utils.Constants.IDENTITY_POOL_ID
 import software.amazon.location.auth.utils.Constants.METHOD
 import software.amazon.location.auth.utils.Constants.REGION
 import software.amazon.location.auth.utils.Constants.SECRET_KEY
 import software.amazon.location.auth.utils.Constants.SESSION_TOKEN
+import software.amazon.location.auth.utils.Constants.TEST_API_KEY
 import software.amazon.location.auth.utils.Constants.TEST_IDENTITY_POOL_ID
 
 class LocationCredentialsProviderTest {
@@ -60,6 +63,13 @@ class LocationCredentialsProviderTest {
             anyConstructed<LocationCredentialsProvider>().generateLocationClient(
                 "us-east-1",
                 any(),
+            )
+        } returns locationClient
+        every {
+            anyConstructed<LocationCredentialsProvider>().generateLocationClient(
+                "us-east-1",
+                any(),
+                any()
             )
         } returns locationClient
         every { anyConstructed<EncryptedSharedPreferences>().put(any(), any<String>()) } just runs
@@ -107,7 +117,7 @@ class LocationCredentialsProviderTest {
     }
 
     @Test
-    fun `initializeLocationClient`() {
+    fun `initializeLocationClient_with_pool_id`() {
         val expirationTime =
             Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000) // 10 seconds in the future
         val mockCredentials =
@@ -129,6 +139,19 @@ class LocationCredentialsProviderTest {
         runBlocking {
             provider.initializeLocationClient(credentialsProvider)
             assertNotNull(provider.getLocationClient())
+        }
+    }
+
+    @Test
+    fun `initializeLocationClient_with_api_key`() {
+        every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "apiKey"
+        every { anyConstructed<EncryptedSharedPreferences>().get(API_KEY_TEST) } returns TEST_API_KEY
+        val provider =
+            LocationCredentialsProvider(context, AwsRegions.US_EAST_1, TEST_API_KEY)
+        runBlocking {
+            provider.initializeLocationClient()
+            assertNotNull(provider.getLocationClient())
+            assertNotNull(provider.getApiKeyProvider())
         }
     }
 
