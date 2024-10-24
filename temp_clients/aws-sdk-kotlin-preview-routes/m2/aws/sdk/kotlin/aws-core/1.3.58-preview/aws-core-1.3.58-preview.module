@@ -1,0 +1,133 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "aws.sdk.kotlin",
+    "module": "aws-core",
+    "version": "1.3.58-preview",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.5"
+    }
+  },
+  "variants": [
+    {
+      "name": "metadataApiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-metadata",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "dependencies": [
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "runtime-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "smithy-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aws-core-metadata-1.3.58-preview.jar",
+          "url": "aws-core-1.3.58-preview.jar",
+          "size": 699,
+          "sha512": "1319e9cdca4d9b9f39543f4ae7c3c635de70f01d897dbceda5e19a65f983172f2e7abc3a37ddaa7a9ed081af4aae20f76978cbed7080612e908e0b19361fe4ba",
+          "sha256": "6af2f83e141a88f4a8ffe6a9c5548fac30a657d665bf41870a5cdc240db98db1",
+          "sha1": "2f725ec0aaf67cda6409a1c92cd7e803a5d70241",
+          "md5": "58ccca37f7992dc600477cfa591b93e3"
+        }
+      ]
+    },
+    {
+      "name": "metadataSourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "non-jvm",
+        "org.gradle.usage": "kotlin-runtime",
+        "org.jetbrains.kotlin.platform.type": "common"
+      },
+      "files": [
+        {
+          "name": "aws-core-kotlin-1.3.58-preview-sources.jar",
+          "url": "aws-core-1.3.58-preview-sources.jar",
+          "size": 261,
+          "sha512": "1487e5a20c9e4d74f298e07c42e96a61be11b7a768c3fbc199ee138cd68e1fc2267d1cfe3f11f288acc05df755315344d052cc5f6f751f126ab4fe1caa5125ea",
+          "sha256": "c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3",
+          "sha1": "2ad14aed781c4a73ed4dbb421966d408a0a06686",
+          "md5": "f43436d6bec321290f6af228ad602604"
+        }
+      ]
+    },
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../aws-core-jvm/1.3.58-preview/aws-core-jvm-1.3.58-preview.module",
+        "group": "aws.sdk.kotlin",
+        "module": "aws-core-jvm",
+        "version": "1.3.58-preview"
+      }
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../aws-core-jvm/1.3.58-preview/aws-core-jvm-1.3.58-preview.module",
+        "group": "aws.sdk.kotlin",
+        "module": "aws-core-jvm",
+        "version": "1.3.58-preview"
+      }
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "available-at": {
+        "url": "../../aws-core-jvm/1.3.58-preview/aws-core-jvm-1.3.58-preview.module",
+        "group": "aws.sdk.kotlin",
+        "module": "aws-core-jvm",
+        "version": "1.3.58-preview"
+      }
+    }
+  ]
+}

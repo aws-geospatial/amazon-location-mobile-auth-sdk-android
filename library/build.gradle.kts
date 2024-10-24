@@ -20,7 +20,7 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.DEFAULT, automaticRelease = true)
     signAllPublications()
 
-    coordinates("software.amazon.location", "auth", "0.2.5")
+    coordinates("software.amazon.location", "auth", "1.0.0")
 
     pom {
         name.set("Amazon Location Service Mobile Authentication SDK for Android")
@@ -87,8 +87,11 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
-    implementation("aws.sdk.kotlin:cognitoidentity:1.3.29")
-    implementation("aws.sdk.kotlin:location:1.3.29")
+    implementation("aws.sdk.kotlin:cognitoidentity:1.3.58")
+    implementation("aws.sdk.kotlin:location:1.3.58")
+    implementation("aws.sdk.kotlin:geomaps:1.3.61-preview")
+    implementation("aws.sdk.kotlin:geoplaces:1.3.61-preview")
+    implementation("aws.sdk.kotlin:georoutes:1.3.58-preview")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     testImplementation("junit:junit:4.13.2")

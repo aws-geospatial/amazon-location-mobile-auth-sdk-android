@@ -11,10 +11,21 @@ SDK on Maven Central.
 Add the following lines to the dependencies section of your build.gradle file in Android Studio:
 
 ```
-implementation("software.amazon.location:auth:0.2.5")
-implementation("aws.sdk.kotlin:location:1.3.29")
-implementation("org.maplibre.gl:android-sdk:11.0.0-pre5")
+implementation("software.amazon.location:auth:1.0.0")
+implementation("org.maplibre.gl:android-sdk:11.5.2")
 implementation("com.squareup.okhttp3:okhttp:4.12.0")
+```
+
+For the new standalone Maps / Places / Routes SDKs, add the following lines:
+```
+implementation("aws.sdk.kotlin:geomaps:1.3.60")
+implementation("aws.sdk.kotlin:geoplaces:1.3.60")
+implementation("aws.sdk.kotlin:georoutes:1.3.60")
+```
+
+For the consolidated Location SDK that includes Geofencing and Tracking, add the following line:
+```
+implementation("aws.sdk.kotlin:location:1.3.60")
 ```
 
 ## Usage
@@ -22,6 +33,12 @@ implementation("com.squareup.okhttp3:okhttp:4.12.0")
 Import the following classes in your code:
 
 ```
+// For the standalone Maps / Places / Routes SDKs
+import aws.sdk.kotlin.services.geomaps.GeoMapsClient
+import aws.sdk.kotlin.services.geoplaces.GeoPlacesClient
+import aws.sdk.kotlin.services.georoutes.GeoRoutesClient
+
+// For the consolidated Location SDK
 import aws.sdk.kotlin.services.location.LocationClient
 
 import software.amazon.location.auth.AuthHelper
@@ -38,6 +55,13 @@ You can create an AuthHelper and use it with the AWS Kotlin SDK:
 private suspend fun exampleCognitoLogin() {
     var authHelper = AuthHelper(applicationContext)
     var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCognitoIdentityPool("MY-COGNITO-IDENTITY-POOL-ID")
+    
+    // Get instances of the standalone clients:
+    var geoMapsClient = locationCredentialsProvider?.getGeoMapsClient()
+    var geoPlacesClient = locationCredentialsProvider?.getGeoPlacesClient()
+    var geoRoutesClient = locationCredentialsProvider?.getGeoRoutesClient()
+    
+    // Get an instance of the Location client:
     var locationClient = locationCredentialsProvider?.getLocationClient()
 }
 
@@ -47,8 +71,14 @@ OR
 private suspend fun exampleCustomCredentialLogin() {
     var authHelper = AuthHelper(applicationContext)
     var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCredentialsProvider("MY-AWS-REGION", MY-CUSTOM-CREDENTIAL-PROVIDER)
-    var locationClient = locationCredentialsProvider?.getLocationClient()
-}
+
+    // Get instances of the standalone clients:
+    var geoMapsClient = locationCredentialsProvider?.getGeoMapsClient()
+    var geoPlacesClient = locationCredentialsProvider?.getGeoPlacesClient()
+    var geoRoutesClient = locationCredentialsProvider?.getGeoRoutesClient()
+    
+    // Get an instance of the Location client:
+    var locationClient = locationCredentialsProvider?.getLocationClient()}
 
 OR
 
@@ -56,6 +86,13 @@ OR
 private suspend fun exampleApiKeyLogin() {
     var authHelper = AuthHelper(applicationContext)
     var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithApiKey("MY-API-KEY", "MY-AWS-REGION")
+
+    // Get instances of the standalone clients:
+    var geoMapsClient = locationCredentialsProvider?.getGeoMapsClient()
+    var geoPlacesClient = locationCredentialsProvider?.getGeoPlacesClient()
+    var geoRoutesClient = locationCredentialsProvider?.getGeoRoutesClient()
+    
+    // Get an instance of the Location client:
     var locationClient = locationCredentialsProvider?.getLocationClient()
 }
 ```
@@ -76,16 +113,15 @@ HttpRequestUtil.setOkHttpClient(
 )
 ```
 
-You can use the LocationClient to make calls to Amazon Location Service. Here is an example that searches for places near a specified latitude and longitude:
+You can use the returned clients to make calls to Amazon Location Service. Here is an example that searches for places near a specified latitude and longitude:
 
 ```
-val searchPlaceIndexForPositionRequest = SearchPlaceIndexForPositionRequest {
-       indexName = "My-Place-Index-Name"
-       position = listOf(30.405423, -97.718833)
+val suggestRequest = SuggestRequest {
+       biasPosition = listOf(-97.718833, 30.405423)
        maxResults = MAX_RESULT
        language = "PREFERRED-LANGUAGE"
    }
-val nearbyPlaces = locationClient.searchPlaceIndexForPosition(request)
+val nearbyPlaces = geoPlacesClient.suggest(request)
 ```
 
 ## Security

@@ -6,6 +6,9 @@ import aws.sdk.kotlin.runtime.auth.credentials.StaticCredentialsProvider
 import aws.sdk.kotlin.services.cognitoidentity.CognitoIdentityClient
 import aws.sdk.kotlin.services.cognitoidentity.model.GetCredentialsForIdentityRequest
 import aws.sdk.kotlin.services.cognitoidentity.model.GetIdRequest
+import aws.sdk.kotlin.services.geomaps.GeoMapsClient
+import aws.sdk.kotlin.services.geoplaces.GeoPlacesClient
+import aws.sdk.kotlin.services.georoutes.GeoRoutesClient
 import aws.sdk.kotlin.services.location.LocationClient
 import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
 import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
@@ -31,6 +34,9 @@ class LocationCredentialsProvider {
     private var cognitoCredentialsProvider: CognitoCredentialsProvider? = null
     private var securePreferences: EncryptedSharedPreferences
     private var locationClient: LocationClient? = null
+    private var geoMapsClient: GeoMapsClient? = null
+    private var geoPlacesClient: GeoPlacesClient? = null
+    private var geoRoutesClient: GeoRoutesClient? = null
     private var cognitoIdentityClient: CognitoIdentityClient? = null
     private var apiKeyProvider: ApiKeyCredentialsProvider? = null
 
@@ -168,6 +174,9 @@ class LocationCredentialsProvider {
             expiration = credentials.expiration
         }
         locationClient = generateLocationClient(region, credentialsProvider)
+        geoMapsClient = generateGeoMapsClient(region, credentialsProvider)
+        geoPlacesClient = generateGeoPlacesClient(region, credentialsProvider)
+        geoRoutesClient = generateGeoRoutesClient(region, credentialsProvider)
     }
 
     /**
@@ -190,7 +199,10 @@ class LocationCredentialsProvider {
             secretKey = credentials.secretAccessKey
             sessionToken = credentials.sessionToken
         }
+        geoMapsClient = generateGeoMapsClient(region, createEmptyCredentialsProvider(), apiKey)
         locationClient = generateLocationClient(region, createEmptyCredentialsProvider(), apiKey)
+        geoPlacesClient = generateGeoPlacesClient(region, createEmptyCredentialsProvider(), apiKey)
+        geoRoutesClient = generateGeoRoutesClient(region, createEmptyCredentialsProvider(), apiKey)
     }
 
     /**
@@ -238,6 +250,91 @@ class LocationCredentialsProvider {
         return locationClient
     }
 
+    /**
+     * Retrieves the GeoMapsClient instance with configured AWS credentials.
+     *
+     * This function initializes and returns the GeoMapsClient with the AWS region and
+     * credentials retrieved from secure preferences.
+     *
+     * @return An instance of GeoMapsClient for interacting with the Amazon Location service.
+     * @throws Exception if the AWS region is not found in secure preferences.
+     */
+    fun getGeoMapsClient(): GeoMapsClient? {
+        val region = securePreferences.get(REGION) ?: throw Exception("No credentials found")
+
+        if (geoMapsClient == null) {
+            val method = securePreferences.get(METHOD) ?: throw Exception("No credentials found")
+            geoMapsClient = when (method) {
+                "apiKey" -> {
+                    val apiKey = securePreferences.get(API_KEY) ?: throw Exception("API key not found")
+                    generateGeoMapsClient(region, createEmptyCredentialsProvider(), apiKey)
+                }
+                else -> {
+                    val credentialsProvider = createCredentialsProvider()
+                    generateGeoMapsClient(region, credentialsProvider)
+                }
+            }
+        }
+        return geoMapsClient
+    }
+
+    /**
+     * Retrieves the GeoPlacesClient instance with configured AWS credentials.
+     *
+     * This function initializes and returns the GeoPlacesClient with the AWS region and
+     * credentials retrieved from secure preferences.
+     *
+     * @return An instance of GeoPlacesClient for interacting with the Amazon Location service.
+     * @throws Exception if the AWS region is not found in secure preferences.
+     */
+    fun getGeoPlacesClient(): GeoPlacesClient? {
+        val region = securePreferences.get(REGION) ?: throw Exception("No credentials found")
+
+        if (geoPlacesClient == null) {
+            val method = securePreferences.get(METHOD) ?: throw Exception("No credentials found")
+            geoPlacesClient = when (method) {
+                "apiKey" -> {
+                    val apiKey = securePreferences.get(API_KEY) ?: throw Exception("API key not found")
+                    generateGeoPlacesClient(region, createEmptyCredentialsProvider(), apiKey)
+                }
+                else -> {
+                    val credentialsProvider = createCredentialsProvider()
+                    generateGeoPlacesClient(region, credentialsProvider)
+                }
+            }
+        }
+        return geoPlacesClient
+    }
+
+
+    /**
+     * Retrieves the GeoRoutesClient instance with configured AWS credentials.
+     *
+     * This function initializes and returns the GeoRoutesClient with the AWS region and
+     * credentials retrieved from secure preferences.
+     *
+     * @return An instance of GeoRoutesClient for interacting with the Amazon Location service.
+     * @throws Exception if the AWS region is not found in secure preferences.
+     */
+    fun getGeoRoutesClient(): GeoRoutesClient? {
+        val region = securePreferences.get(REGION) ?: throw Exception("No credentials found")
+
+        if (geoRoutesClient == null) {
+            val method = securePreferences.get(METHOD) ?: throw Exception("No credentials found")
+            geoRoutesClient = when (method) {
+                "apiKey" -> {
+                    val apiKey = securePreferences.get(API_KEY) ?: throw Exception("API key not found")
+                    generateGeoRoutesClient(region, createEmptyCredentialsProvider(), apiKey)
+                }
+                else -> {
+                    val credentialsProvider = createCredentialsProvider()
+                    generateGeoRoutesClient(region, credentialsProvider)
+                }
+            }
+        }
+        return geoRoutesClient
+    }
+
 
     /**
      * Generates a new instance of [LocationClient] with the specified region,
@@ -256,6 +353,82 @@ class LocationCredentialsProvider {
         apiKey: String? = null
     ): LocationClient {
         return LocationClient {
+            this.region = region
+            this.credentialsProvider = credentialsProvider
+            apiKey?.let {
+                this.interceptors = mutableListOf(ApiKeyInterceptor(it))
+            }
+        }
+    }
+
+
+    /**
+     * Generates a new instance of [GeoMapsClient] with the specified region,
+     * credentials provider, and optional API key for request signing.
+     *
+     * @param region The AWS region to configure for the [GeoMapsClient].
+     * @param credentialsProvider The credentials provider for the [GeoMapsClient].
+     *                            It supplies the credentials required for authenticating requests.
+     * @param apiKey Optional. The API key to use for signing requests. If provided,
+     *               an [ApiKeyInterceptor] will be added to the [GeoMapsClient].
+     * @return A new instance of [GeoMapsClient] configured with the specified parameters.
+     */
+    fun generateGeoMapsClient(
+        region: String,
+        credentialsProvider: CredentialsProvider,
+        apiKey: String? = null
+    ): GeoMapsClient {
+        return GeoMapsClient {
+            this.region = region
+            this.credentialsProvider = credentialsProvider
+            apiKey?.let {
+                this.interceptors = mutableListOf(ApiKeyInterceptor(it))
+            }
+        }
+    }
+
+    /**
+     * Generates a new instance of [GeoPlacesClient] with the specified region,
+     * credentials provider, and optional API key for request signing.
+     *
+     * @param region The AWS region to configure for the [GeoPlacesClient].
+     * @param credentialsProvider The credentials provider for the [GeoPlacesClient].
+     *                            It supplies the credentials required for authenticating requests.
+     * @param apiKey Optional. The API key to use for signing requests. If provided,
+     *               an [ApiKeyInterceptor] will be added to the [GeoPlacesClient].
+     * @return A new instance of [GeoPlacesClient] configured with the specified parameters.
+     */
+    fun generateGeoPlacesClient(
+        region: String,
+        credentialsProvider: CredentialsProvider,
+        apiKey: String? = null
+    ): GeoPlacesClient {
+        return GeoPlacesClient {
+            this.region = region
+            this.credentialsProvider = credentialsProvider
+            apiKey?.let {
+                this.interceptors = mutableListOf(ApiKeyInterceptor(it))
+            }
+        }
+    }
+
+    /**
+     * Generates a new instance of [GeoRoutesClient] with the specified region,
+     * credentials provider, and optional API key for request signing.
+     *
+     * @param region The AWS region to configure for the [GeoRoutesClient].
+     * @param credentialsProvider The credentials provider for the [GeoRoutesClient].
+     *                            It supplies the credentials required for authenticating requests.
+     * @param apiKey Optional. The API key to use for signing requests. If provided,
+     *               an [ApiKeyInterceptor] will be added to the [GeoRoutesClient].
+     * @return A new instance of [GeoRoutesClient] configured with the specified parameters.
+     */
+    fun generateGeoRoutesClient(
+        region: String,
+        credentialsProvider: CredentialsProvider,
+        apiKey: String? = null
+    ): GeoRoutesClient {
+        return GeoRoutesClient {
             this.region = region
             this.credentialsProvider = credentialsProvider
             apiKey?.let {
@@ -316,6 +489,9 @@ class LocationCredentialsProvider {
 
                 cognitoCredentialsProvider = CognitoCredentialsProvider(context, identityId, credentials)
                 locationClient = null
+                geoMapsClient = null
+                geoPlacesClient = null
+                geoRoutesClient = null
             }
         } catch (e: HttpException) {
             Log.e("Auth", "Credentials generation failed: ${e.cause} ${e.message}")
@@ -393,6 +569,9 @@ class LocationCredentialsProvider {
             else -> {
                 cognitoCredentialsProvider?.let {
                     locationClient = null
+                    geoMapsClient = null
+                    geoPlacesClient = null
+                    geoRoutesClient = null
                     it.clearCredentials()
                     verifyAndRefreshCredentials()
                 } ?: throw Exception("Refresh is only supported for Cognito credentials. Make sure to use the cognito constructor.")
