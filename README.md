@@ -117,7 +117,7 @@ You can use the returned clients to make calls to Amazon Location Service. Here 
 
 ```
 val suggestRequest = SuggestRequest {
-       biasPosition = listOf(30.405423, -97.718833)
+       biasPosition = listOf(-97.718833, 30.405423)
        maxResults = MAX_RESULT
        language = "PREFERRED-LANGUAGE"
    }

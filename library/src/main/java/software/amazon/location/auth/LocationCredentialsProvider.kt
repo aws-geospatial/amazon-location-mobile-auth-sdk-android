@@ -373,10 +373,6 @@ class LocationCredentialsProvider {
      *               an [ApiKeyInterceptor] will be added to the [GeoMapsClient].
      * @return A new instance of [GeoMapsClient] configured with the specified parameters.
      */
-
-    private fun getSystemProperty(name: String, defaultValue: String = "unknown"): String =
-        runCatching { System.getProperty(name) }.getOrDefault(defaultValue)
-
     fun generateGeoMapsClient(
         region: String,
         credentialsProvider: CredentialsProvider,
