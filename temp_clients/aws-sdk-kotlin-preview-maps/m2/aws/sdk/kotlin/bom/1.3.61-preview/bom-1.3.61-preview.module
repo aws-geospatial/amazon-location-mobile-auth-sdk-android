@@ -1,0 +1,582 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "aws.sdk.kotlin",
+    "module": "bom",
+    "version": "1.3.61-preview",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.5"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "platform",
+        "org.gradle.usage": "java-api"
+      },
+      "dependencyConstraints": [
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-config-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-config",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-core-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-core",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-endpoint-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-endpoint",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-http-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-http",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "geomaps-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "geomaps",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-credentials",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-event-stream",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-json-protocols",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-protocol-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-common",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-crt",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-default",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-xml-protocols",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "crt-util",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth-aws",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client-engine-crt",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client-engine-default",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client-engine-okhttp",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "identity-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "logging-slf4j2",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "runtime-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-cbor",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-form-url",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-json",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-xml",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "smithy-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-defaults",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-provider-otel",
+          "version": {
+            "requires": "1.3.17"
+          }
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "platform",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencyConstraints": [
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-config-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-config",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-core-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-core",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-endpoint-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-endpoint",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-http-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-http",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "geomaps-jvm",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "geomaps",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-credentials",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-event-stream",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-json-protocols",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-protocol-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-common",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-crt",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-default",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-xml-protocols",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "crt-util",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth-aws",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client-engine-crt",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client-engine-default",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client-engine-okhttp",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "identity-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "logging-slf4j2",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "runtime-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-cbor",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-form-url",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-json",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-xml",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "smithy-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-defaults",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-provider-otel",
+          "version": {
+            "requires": "1.3.17"
+          }
+        }
+      ]
+    }
+  ]
+}

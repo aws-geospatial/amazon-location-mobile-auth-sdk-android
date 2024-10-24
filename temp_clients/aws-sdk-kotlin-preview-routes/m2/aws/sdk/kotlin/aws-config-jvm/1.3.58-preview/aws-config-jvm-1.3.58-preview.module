@@ -1,0 +1,291 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../aws-config/1.3.58-preview/aws-config-1.3.58-preview.module",
+    "group": "aws.sdk.kotlin",
+    "module": "aws-config",
+    "version": "1.3.58-preview",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.5"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-core",
+          "version": {
+            "requires": "1.3.58-preview"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-credentials",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.21"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aws-config-jvm-1.3.58-preview.jar",
+          "url": "aws-config-jvm-1.3.58-preview.jar",
+          "size": 983383,
+          "sha512": "ff35f970364b14eafb3ffcfef6325aca24685a3ed2fe2858bcd5888a2110868e41aba75b5845144782f26e3b93e8f6cfecda79e13ad81c09db4e2833be6ce9a1",
+          "sha256": "8d78597c5e274516d7b41e628871ae725b0d3ef2ff84e6b1ca0d74daa1972977",
+          "sha1": "8adb5ff98caba3bf26dac9c74c86828004181895",
+          "md5": "351ecc89cf17c2aa5df45bd7e552a1ab"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-core",
+          "version": {
+            "requires": "1.3.58-preview"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-credentials",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.21"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client-engine-default",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-http",
+          "version": {
+            "requires": "1.3.58-preview"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-json",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-protocol-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-common",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-default",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth-aws",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "identity-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "runtime-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "smithy-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-defaults",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-endpoint",
+          "version": {
+            "requires": "1.3.58-preview"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-xml",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-form-url",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-xml-protocols",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-json-protocols",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlinx",
+          "module": "kotlinx-coroutines-core",
+          "version": {
+            "requires": "1.9.0"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "aws-config-jvm-1.3.58-preview.jar",
+          "url": "aws-config-jvm-1.3.58-preview.jar",
+          "size": 983383,
+          "sha512": "ff35f970364b14eafb3ffcfef6325aca24685a3ed2fe2858bcd5888a2110868e41aba75b5845144782f26e3b93e8f6cfecda79e13ad81c09db4e2833be6ce9a1",
+          "sha256": "8d78597c5e274516d7b41e628871ae725b0d3ef2ff84e6b1ca0d74daa1972977",
+          "sha1": "8adb5ff98caba3bf26dac9c74c86828004181895",
+          "md5": "351ecc89cf17c2aa5df45bd7e552a1ab"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "aws-config-jvm-1.3.58-preview-sources.jar",
+          "url": "aws-config-jvm-1.3.58-preview-sources.jar",
+          "size": 232253,
+          "sha512": "717f8c99edf6ea45d8be063d16e923d5e8ceaeee61137ec795cc35379d1062734c3250de3c7c9c44147e3e68605960d7bc388bad08ac30125ccefc389097f162",
+          "sha256": "fa17b8a33d38818ac2d0ae37fb11e955dcb72282d0e5e43a2281bdfeb045468c",
+          "sha1": "f203ec1eb0bc48e02278ce6a41423b3b7429fbb5",
+          "md5": "4e6576385584ab2658bd653721023ec5"
+        }
+      ]
+    }
+  ]
+}

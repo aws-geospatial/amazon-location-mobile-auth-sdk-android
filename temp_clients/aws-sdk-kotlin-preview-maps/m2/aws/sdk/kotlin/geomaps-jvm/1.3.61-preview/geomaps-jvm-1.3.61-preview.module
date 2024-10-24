@@ -1,0 +1,291 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "url": "../../geomaps/1.3.61-preview/geomaps-1.3.61-preview.module",
+    "group": "aws.sdk.kotlin",
+    "module": "geomaps",
+    "version": "1.3.61-preview",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.5"
+    }
+  },
+  "variants": [
+    {
+      "name": "jvmApiElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-config",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-core",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-endpoint",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "runtime-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "smithy-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "geomaps-jvm-1.3.61-preview.jar",
+          "url": "geomaps-jvm-1.3.61-preview.jar",
+          "size": 240482,
+          "sha512": "3d0b9ec989e71d8e583ea499cefc2d73d87dfaccdf51c258e2ea323e9bbd74bc841dfe9588ed9f3723f1c719cdef05954581164d1d26a7205fa2e7cbb06a8cc2",
+          "sha256": "92b223487a997e7fc9c11c9c86a64d8f18c510a100919f66c900d4ec9ca71a39",
+          "sha1": "38d3377bcec804c74476df1506659bdfdb62b68a",
+          "md5": "980af3b9542f0c7f1acfa86c6ba84287"
+        }
+      ]
+    },
+    {
+      "name": "jvmRuntimeElements-published",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "dependencies": [
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-config",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-core",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-endpoint",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "runtime-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "smithy-client",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-credentials",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.sdk.kotlin",
+          "module": "aws-http",
+          "version": {
+            "requires": "1.3.61-preview"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-json-protocols",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-protocol-core",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-common",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "aws-signing-default",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-auth-aws",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "http-client-engine-default",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "identity-api",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "org.jetbrains.kotlin",
+          "module": "kotlin-stdlib",
+          "version": {
+            "requires": "2.0.10"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "serde-json",
+          "version": {
+            "requires": "1.3.17"
+          }
+        },
+        {
+          "group": "aws.smithy.kotlin",
+          "module": "telemetry-defaults",
+          "version": {
+            "requires": "1.3.17"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "geomaps-jvm-1.3.61-preview.jar",
+          "url": "geomaps-jvm-1.3.61-preview.jar",
+          "size": 240482,
+          "sha512": "3d0b9ec989e71d8e583ea499cefc2d73d87dfaccdf51c258e2ea323e9bbd74bc841dfe9588ed9f3723f1c719cdef05954581164d1d26a7205fa2e7cbb06a8cc2",
+          "sha256": "92b223487a997e7fc9c11c9c86a64d8f18c510a100919f66c900d4ec9ca71a39",
+          "sha1": "38d3377bcec804c74476df1506659bdfdb62b68a",
+          "md5": "980af3b9542f0c7f1acfa86c6ba84287"
+        }
+      ]
+    },
+    {
+      "name": "jvmSourcesElements-published",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "geomaps-jvm-1.3.61-preview-sources.jar",
+          "url": "geomaps-jvm-1.3.61-preview-sources.jar",
+          "size": 53787,
+          "sha512": "2c7cff7c8c8f09b52b27e81158c7d3c7fd02bac5a9b2818e2f8385d45004a18491678151bd43c711d4f3881f5358ca00f076acc2774231cace0880d28bc2f0c6",
+          "sha256": "84b09f8fdfc10dc0d2aa34e13583d64b3ab4f56c3c1e81fb38adbb71caa7bfdf",
+          "sha1": "5d5c10a8c6570feabe2aff8c9ec2c6dc120ead4e",
+          "md5": "0c1216392f2e9975af48b10a31f6d9c4"
+        }
+      ]
+    }
+  ]
+}

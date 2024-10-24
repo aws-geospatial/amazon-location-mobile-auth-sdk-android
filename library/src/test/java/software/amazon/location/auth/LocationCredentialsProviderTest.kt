@@ -7,6 +7,9 @@ import aws.sdk.kotlin.services.cognitoidentity.model.GetCredentialsForIdentityRe
 import aws.sdk.kotlin.services.cognitoidentity.model.GetCredentialsForIdentityResponse
 import aws.sdk.kotlin.services.cognitoidentity.model.GetIdRequest
 import aws.sdk.kotlin.services.cognitoidentity.model.GetIdResponse
+import aws.sdk.kotlin.services.geomaps.GeoMapsClient
+import aws.sdk.kotlin.services.geoplaces.GeoPlacesClient
+import aws.sdk.kotlin.services.georoutes.GeoRoutesClient
 import aws.sdk.kotlin.services.location.LocationClient
 import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
 import aws.smithy.kotlin.runtime.time.Instant
@@ -42,6 +45,9 @@ import software.amazon.location.auth.utils.Constants.TEST_IDENTITY_POOL_ID
 class LocationCredentialsProviderTest {
     private lateinit var context: Context
     private lateinit var locationClient: LocationClient
+    private lateinit var geoMapsClient: GeoMapsClient
+    private lateinit var geoPlacesClient: GeoPlacesClient
+    private lateinit var geoRoutesClient: GeoRoutesClient
     private lateinit var cognitoIdentityClient: CognitoIdentityClient
     private lateinit var cognitoCredentialsProvider: CognitoCredentialsProvider
     private lateinit var credentialsProvider: CredentialsProvider
@@ -50,6 +56,9 @@ class LocationCredentialsProviderTest {
     fun setUp() {
         context = mockk(relaxed = true)
         locationClient = mockk(relaxed = true)
+        geoMapsClient = mockk(relaxed = true)
+        geoPlacesClient = mockk(relaxed = true)
+        geoRoutesClient = mockk(relaxed = true)
         cognitoIdentityClient = mockk(relaxed = true)
         cognitoCredentialsProvider = mockk(relaxed = true)
         credentialsProvider = mockk(relaxed = true)
@@ -66,12 +75,51 @@ class LocationCredentialsProviderTest {
             )
         } returns locationClient
         every {
+            anyConstructed<LocationCredentialsProvider>().generateGeoMapsClient(
+                "us-east-1",
+                any(),
+            )
+        } returns geoMapsClient
+        every {
+            anyConstructed<LocationCredentialsProvider>().generateGeoPlacesClient(
+                "us-east-1",
+                any(),
+            )
+        } returns geoPlacesClient
+        every {
+            anyConstructed<LocationCredentialsProvider>().generateGeoRoutesClient(
+                "us-east-1",
+                any(),
+            )
+        } returns geoRoutesClient
+        every {
             anyConstructed<LocationCredentialsProvider>().generateLocationClient(
                 "us-east-1",
                 any(),
                 any()
             )
         } returns locationClient
+        every {
+            anyConstructed<LocationCredentialsProvider>().generateGeoMapsClient(
+                "us-east-1",
+                any(),
+                any()
+            )
+        } returns geoMapsClient
+        every {
+            anyConstructed<LocationCredentialsProvider>().generateGeoPlacesClient(
+                "us-east-1",
+                any(),
+                any()
+            )
+        } returns geoPlacesClient
+        every {
+            anyConstructed<LocationCredentialsProvider>().generateGeoRoutesClient(
+                "us-east-1",
+                any(),
+                any()
+            )
+        } returns geoRoutesClient
         every { anyConstructed<EncryptedSharedPreferences>().put(any(), any<String>()) } just runs
         every { anyConstructed<EncryptedSharedPreferences>().get(REGION) } returns "us-east-1"
         every { anyConstructed<EncryptedSharedPreferences>().clear() } just runs

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>aws.sdk.kotlin</groupId>
+  <artifactId>version-catalog</artifactId>
+  <versioning>
+    <latest>1.3.58-preview</latest>
+    <release>1.3.58-preview</release>
+    <versions>
+      <version>1.3.58-preview</version>
+    </versions>
+    <lastUpdated>20241018224603</lastUpdated>
+  </versioning>
+</metadata>
