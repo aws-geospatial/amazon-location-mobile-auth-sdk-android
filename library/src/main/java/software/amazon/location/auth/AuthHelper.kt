@@ -9,14 +9,15 @@ import software.amazon.location.auth.utils.AwsRegions
 /**
  * Provides methods for authenticating with AWS services using different credentials providers.
  */
-class AuthHelper(private val context: Context) {
+object AuthHelper {
 
     /**
      * Authenticates using a Cognito Identity Pool ID and infers the region.
      * @param identityPoolId The identity pool id for authentication.
      * @return A LocationCredentialsProvider object.
      */
-    suspend fun authenticateWithCognitoIdentityPool(
+    suspend fun withCognitoIdentityPool(
+        context: Context,
         identityPoolId: String,
     ): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
@@ -37,7 +38,8 @@ class AuthHelper(private val context: Context) {
      * @param region The AWS region as a string.
      * @return A LocationCredentialsProvider object.
      */
-    suspend fun authenticateWithCognitoIdentityPool(
+    suspend fun withCognitoIdentityPool(
+        context: Context,
         identityPoolId: String,
         region: String,
     ): LocationCredentialsProvider {
@@ -58,7 +60,8 @@ class AuthHelper(private val context: Context) {
      * @param region The AWS region as a Regions enum.
      * @return A LocationCredentialsProvider object.
      */
-    suspend fun authenticateWithCognitoIdentityPool(
+    suspend fun withCognitoIdentityPool(
+        context: Context,
         identityPoolId: String,
         region: AwsRegions,
     ): LocationCredentialsProvider {
@@ -105,7 +108,8 @@ class AuthHelper(private val context: Context) {
      * @param credentialsProvider The `CredentialsProvider` from AWS Kotlin SDK (`aws.smithy.kotlin.runtime.auth.awscredentials`).
      * @return A `LocationCredentialsProvider` object.
      */
-    suspend fun authenticateWithCredentialsProvider(
+    suspend fun withCredentialsProvider(
+        context: Context,
         region: String,
         credentialsProvider: CredentialsProvider
     ): LocationCredentialsProvider {
@@ -125,7 +129,8 @@ class AuthHelper(private val context: Context) {
      * @param region The AWS region as a string.
      * @return A LocationCredentialsProvider instance.
      */
-    suspend fun authenticateWithApiKey(apiKey: String, region: String): LocationCredentialsProvider {
+    suspend fun withApiKey(        context: Context,
+                                               apiKey: String, region: String): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
                 context,

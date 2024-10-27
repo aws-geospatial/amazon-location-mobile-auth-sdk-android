@@ -37,7 +37,6 @@ class CustomCredentialsProviderTest {
     @Before
     fun setUp() {
         context = mockk(relaxed = true)
-        locationClient = mockk(relaxed = true)
         cognitoIdentityClient = mockk(relaxed = true)
         cognitoCredentialsProvider = mockk(relaxed = true)
         credentialsProvider = mockk(relaxed = true)
@@ -47,12 +46,6 @@ class CustomCredentialsProviderTest {
         every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
 
         every { anyConstructed<LocationCredentialsProvider>().generateCognitoIdentityClient("us-east-1") } returns cognitoIdentityClient
-        every {
-            anyConstructed<LocationCredentialsProvider>().generateLocationClient(
-                "us-east-1",
-                any(),
-            )
-        } returns locationClient
         every { anyConstructed<EncryptedSharedPreferences>().put(any(), any<String>()) } just runs
         every { anyConstructed<EncryptedSharedPreferences>().get(REGION) } returns "us-east-1"
         every { anyConstructed<EncryptedSharedPreferences>().clear() } just runs
