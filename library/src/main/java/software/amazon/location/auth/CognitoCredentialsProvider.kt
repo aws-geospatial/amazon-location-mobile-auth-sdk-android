@@ -1,102 +1,126 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.amazon.location.auth
 
-import android.content.Context
-import aws.sdk.kotlin.services.cognitoidentity.model.Credentials
+import android.util.Log
+import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
+import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
+import aws.smithy.kotlin.runtime.collections.Attributes
+import aws.sdk.kotlin.runtime.auth.credentials.StaticCredentialsProvider
+import aws.sdk.kotlin.services.cognitoidentity.CognitoIdentityClient
+import aws.sdk.kotlin.services.cognitoidentity.model.GetCredentialsForIdentityRequest
+import aws.sdk.kotlin.services.cognitoidentity.model.GetIdRequest
+import aws.smithy.kotlin.runtime.http.HttpException
 import aws.smithy.kotlin.runtime.time.Instant
 import aws.smithy.kotlin.runtime.time.epochMilliseconds
-import aws.smithy.kotlin.runtime.time.fromEpochMilliseconds
-import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
-import software.amazon.location.auth.utils.Constants.EXPIRATION
-import software.amazon.location.auth.utils.Constants.IDENTITY_ID
-import software.amazon.location.auth.utils.Constants.SECRET_KEY
-import software.amazon.location.auth.utils.Constants.SESSION_TOKEN
 
-/**
- * Provides Cognito credentials for accessing services and manages their storage.
- */
-class CognitoCredentialsProvider {
-    private var securePreferences: EncryptedSharedPreferences? = null
+// Provide credentials for the given Cognito identity pool.
+class CognitoCredentialsProvider
+    /**
+     * Create a CognitoCredentialsProvider that handles the given identity pool ID.
+     * The credentials themselves will be lazily fetched on the first resolve() call.
+     *
+     * @param identityPoolId The identity pool ID for Cognito.
+     * @param identityRegion The AWS region where the identity pool is located.
+     */
+    (
+        private var identityPoolId: String,// Keep track of the region and identity pool ID for use during credential refreshes.
+        private var identityRegion: String
+    ) : CredentialsProvider {
+
+    // staticCredentialsProvider holds the cached credentials.
+    // (Defaults to empty credentials)
+    private var staticCredentialsProvider = StaticCredentialsProvider(
+        Credentials.invoke(
+            accessKeyId = "",
+            secretAccessKey = "",
+            sessionToken = null,
+            expiration = null
+        ))
 
     /**
-     * Constructor that initializes the provider with a context and credentials.
-     * @param context The application context used to initialize the key-value store.
-     * @param identityId The identityId to be saved in the key-value store.
-     * @param credentials The credentials to be saved in the key-value store.
+     * Provide the credentials, but refresh them first if they've expired.
+     *
+     * @param attributes
+     * @return The Cognito credentials to use for authentication.
      */
-    constructor(context: Context, identityId: String, credentials: Credentials) {
-        initialize(context)
-        saveCredentials(identityId, credentials)
-    }
-
-    /**
-     * Constructor that initializes the provider with a context and retrieves cached credentials.
-     * Throws an exception if no cached credentials are found.
-     * @param context The application context used to initialize the key-value store.
-     */
-    constructor(context: Context) {
-        initialize(context)
-        val credentials = getCachedCredentials()
-        if (credentials === null) throw Exception("No credentials found")
-    }
-
-    /**
-     * Initializes the AWSKeyValueStore with the given context.
-     * @param context The application context used to initialize the key-value store.
-     */
-    private fun initialize(context: Context) {
-        securePreferences = EncryptedSharedPreferences(context, PREFS_NAME)
-        securePreferences?.initEncryptedSharedPreferences()
-    }
-
-    /**
-     * Saves the given credentials to the key-value store.
-     * @param identityId The identityId to be saved in the key-value store.
-     * @param credentials The credentials to be saved in the key-value store.
-     * @throws Exception if the key-value store is not initialized.
-     */
-    private fun saveCredentials(identityId: String, credentials: Credentials) {
-        if (securePreferences === null) throw Exception("Not initialized")
-        securePreferences?.put(IDENTITY_ID, identityId)
-        credentials.accessKeyId?.let { securePreferences?.put(ACCESS_KEY_ID, it) }
-        credentials.secretKey?.let { securePreferences?.put(SECRET_KEY, it) }
-        credentials.sessionToken?.let { securePreferences?.put(SESSION_TOKEN, it) }
-        credentials.expiration?.let {
-            securePreferences?.put(
-                EXPIRATION,
-                it.epochMilliseconds.toString()
-            )
+    override suspend fun resolve(attributes: Attributes): Credentials {
+        if (!areCredentialsValid()) {
+            refreshCognitoCredentials()
         }
 
+        return staticCredentialsProvider.credentials
     }
 
     /**
-     * Retrieves cached credentials from the key-value store.
-     * @return A Credentials object if all required fields are present, otherwise null.
+     * Fetches a new set of credentials from Cognito.
+     *
+     * All of the Cognito access has been pulled out into this function so that it's easy to mock
+     * away the Cognito calls in unit tests by mocking this method. Successfully mocking at the
+     * Cognito level is much more difficult due to the nested Builder() calls and lambdas that
+     * get invoked.
+     *
+     * @throws Exception if the credential generation fails.
      */
-    fun getCachedCredentials(): Credentials? {
-        if (securePreferences === null) return null
-        val mAccessKeyId = securePreferences?.get(ACCESS_KEY_ID)
-        val mSecretKey = securePreferences?.get(SECRET_KEY)
-        val mSessionToken = securePreferences?.get(SESSION_TOKEN)
-        val mExpiration = securePreferences?.get(EXPIRATION)
-        if (mAccessKeyId.isNullOrEmpty() || mSecretKey.isNullOrEmpty() || mSessionToken.isNullOrEmpty() || mExpiration.isNullOrEmpty()) return null
-        return Credentials.invoke {
-            accessKeyId = mAccessKeyId
-            secretKey = mSecretKey
-            sessionToken = mSessionToken
-            expiration = Instant.fromEpochMilliseconds(mExpiration.toLong())
+    suspend fun fetchCognitoCredentials(): aws.sdk.kotlin.services.cognitoidentity.model.Credentials {
+        var credentials = aws.sdk.kotlin.services.cognitoidentity.model.Credentials.invoke {}
+
+        try {
+            val poolId = identityPoolId
+            val cognitoIdentityClient = CognitoIdentityClient { this.region = identityRegion }
+            val identityId = cognitoIdentityClient.getId(GetIdRequest { this.identityPoolId = poolId })
+                .identityId ?: throw Exception("Failed to get identity ID for identity pool")
+
+            if (identityId.isNotEmpty()) {
+                credentials = cognitoIdentityClient.getCredentialsForIdentity(
+                    GetCredentialsForIdentityRequest { this.identityId = identityId })
+                    .credentials ?: throw Exception("Failed to get credentials for identity")
+            }
+        } catch (e: HttpException) {
+            Log.e("Auth", "Credentials generation failed: ${e.cause} ${e.message}")
+            throw HttpException("Credentials generation failed", e)
+        } catch (e: Exception) {
+            throw Exception("Credentials generation failed", e)
+        }
+
+        return credentials
+    }
+
+    /**
+     * Generates new AWS credentials using the specified region and identity pool ID.
+     *
+     * This function fetches the identity ID and credentials from Cognito, and then initializes
+     * the CognitoCredentialsProvider with the retrieved credentials.
+     *
+     * @throws Exception if the credential generation fails.
+     */
+    private suspend fun refreshCognitoCredentials() {
+        try {
+            val credentials = fetchCognitoCredentials()
+            requireNotNull(credentials.accessKeyId) { "Access key ID is null" }
+            requireNotNull(credentials.secretKey) { "Secret key is null" }
+            requireNotNull(credentials.sessionToken) { "Session token is null" }
+
+            staticCredentialsProvider = StaticCredentialsProvider(
+                Credentials.invoke(
+                    accessKeyId = credentials.accessKeyId!!,
+                    secretAccessKey = credentials.secretKey!!,
+                    sessionToken = credentials.sessionToken,
+                    expiration = credentials.expiration
+                ))
+        } catch (e: Exception) {
+            throw e
         }
     }
 
     /**
-     * Clears all credentials from the key-value store.
+     * Check to see if the credentials have expired yet or not.
      */
-    fun clearCredentials() {
-        if (securePreferences === null) throw Exception("Not initialized")
-        securePreferences?.remove(IDENTITY_ID)
-        securePreferences?.remove(ACCESS_KEY_ID)
-        securePreferences?.remove(SECRET_KEY)
-        securePreferences?.remove(SESSION_TOKEN)
-        securePreferences?.remove(EXPIRATION)
+    private fun areCredentialsValid(): Boolean {
+        if (staticCredentialsProvider.credentials.expiration == null) return false
+
+        val expirationTimeMillis = staticCredentialsProvider.credentials.expiration!!.epochMilliseconds
+        return Instant.now().epochMilliseconds < expirationTimeMillis
     }
 }

@@ -1,5 +1,7 @@
-package software.amazon.location.auth.utils
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
 
+package software.amazon.location.auth.utils
 
 enum class AwsRegions(val regionName: String) {
     GovCloud("us-gov-west-1"),
