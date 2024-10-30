@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.amazon.location.auth
 
 import aws.smithy.kotlin.runtime.client.ProtocolRequestInterceptorContext
@@ -14,11 +17,11 @@ class ApiKeyInterceptor(
     override suspend fun modifyBeforeSigning(context: ProtocolRequestInterceptorContext<Any, HttpRequest>): HttpRequest {
         val req = context.protocolRequest.toBuilder()
 
-        if (!context.protocolRequest.url.toString().contains("$QUERY_PARAM_KEY=")) {
+        return if (!context.protocolRequest.url.toString().contains("$QUERY_PARAM_KEY=")) {
             req.url(Url.parse(context.protocolRequest.url.toString()+"?$QUERY_PARAM_KEY=$apiKey"))
-            return req.build()
+            req.build()
         } else {
-            return super.modifyBeforeSigning(context)
+            super.modifyBeforeSigning(context)
         }
     }
 }
