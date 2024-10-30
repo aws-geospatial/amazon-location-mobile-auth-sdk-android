@@ -48,9 +48,14 @@ class AwsSignerInterceptor(
             val hasKey = originalHttpUrl.queryParameter(QUERY_PARAM_KEY) != null
             val newHttpUrl = if (!hasKey) {
                 val apiKey = credentialsProvider?.getApiKey()
-                originalHttpUrl.newBuilder()
-                    .addQueryParameter(QUERY_PARAM_KEY, apiKey)
-                    .build()
+                if (!apiKey.isNullOrEmpty()) {
+                    originalHttpUrl.newBuilder()
+                        .addQueryParameter(QUERY_PARAM_KEY, apiKey)
+                        .build()
+                }
+                else {
+                    originalHttpUrl
+                }
             } else {
                 originalHttpUrl
             }
