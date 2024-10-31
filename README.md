@@ -118,7 +118,7 @@ val suggestRequest = SuggestRequest {
        maxResults = MAX_RESULT
        language = "PREFERRED-LANGUAGE"
    }
-val nearbyPlaces = geoPlacesClient.suggest(request)
+val nearbyPlaces = geoPlacesClient.suggest(suggestRequest)
 ```
 
 ## Security
