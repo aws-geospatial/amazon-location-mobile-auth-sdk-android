@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.amazon.location.auth
 
 import aws.smithy.kotlin.runtime.client.ProtocolRequestInterceptorContext
@@ -23,7 +26,7 @@ class ApiKeyInterceptorTest {
     }
 
     @Test
-    fun `test URL is modified when key is missing`() = runBlocking {
+    fun `test URL is modified when key is missing from the URL`() = runBlocking {
         val mockContext = mockk<ProtocolRequestInterceptorContext<Any, HttpRequest>>(relaxed = true)
         val httpRequest = HttpRequest(
             method= HttpMethod.POST,
@@ -38,7 +41,7 @@ class ApiKeyInterceptorTest {
     }
 
     @Test
-    fun `test URL is not modified when key is present`() = runBlocking {
+    fun `test URL is not modified when key is present in the URL`() = runBlocking {
         val mockContext = mockk<ProtocolRequestInterceptorContext<Any, HttpRequest>>(relaxed = true)
         val httpRequest = HttpRequest(
             method= HttpMethod.POST,

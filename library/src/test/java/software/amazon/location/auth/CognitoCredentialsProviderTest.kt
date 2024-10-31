@@ -1,155 +1,139 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.amazon.location.auth
 
-import android.content.Context
 import aws.sdk.kotlin.services.cognitoidentity.model.Credentials
-import aws.smithy.kotlin.runtime.http.auth.AnonymousIdentity.expiration
 import aws.smithy.kotlin.runtime.time.Instant
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
+import aws.smithy.kotlin.runtime.time.epochMilliseconds
+import aws.smithy.kotlin.runtime.time.fromEpochMilliseconds
+import io.mockk.coEvery
 import io.mockk.mockkConstructor
-import io.mockk.runs
-import io.mockk.verify
+import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNull
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
-import org.junit.Before
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import software.amazon.location.auth.utils.Constants.ACCESS_KEY_ID
-import software.amazon.location.auth.utils.Constants.EXPIRATION
-import software.amazon.location.auth.utils.Constants.SECRET_KEY
-import software.amazon.location.auth.utils.Constants.SESSION_TOKEN
 
 class CognitoCredentialsProviderTest {
-
-    private lateinit var context: Context
-
-    @Before
-    fun setUp() {
-        context = mockk(relaxed = true)
-
-        mockkConstructor(EncryptedSharedPreferences::class)
-        mockkConstructor(EncryptedSharedPreferences::class)
-
-        every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
-        every { anyConstructed<EncryptedSharedPreferences>().put(any(), any<String>()) } just runs
-        every { anyConstructed<EncryptedSharedPreferences>().get(any()) } returns null
-        every { anyConstructed<EncryptedSharedPreferences>().clear() } just runs
-        every { anyConstructed<EncryptedSharedPreferences>().remove(any()) } just runs
+    @Test
+    fun `Constructs successfully with identity pool and region`() {
+        val provider = CognitoCredentialsProvider("identityPool", "us-east-1")
+        assertNotNull(provider)
     }
 
     @Test
-    fun `constructor with credentials saves credentials`() {
-        val credentials = Credentials.invoke {
-            accessKeyId = "accessKeyId"
-            expiration = Instant.now()
-            secretKey = "secretKey"
-            sessionToken = "sessionToken"
+    fun `Calling resolve for the first time refreshes credentials successfully and returns them`() {
+        val expirationTime =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000)
+
+        // Create mock CognitoIdentityClient
+        mockkConstructor(CognitoCredentialsProvider::class)
+        coEvery {
+            anyConstructed<CognitoCredentialsProvider>().fetchCognitoCredentials()
+        } returns Credentials.invoke {
+                expiration = expirationTime
+                secretKey = "testSecretKey"
+                accessKeyId = "testAccessKeyId"
+                sessionToken = "testSessionToken"
         }
 
-        every {
-            anyConstructed<EncryptedSharedPreferences>().put(
-                ACCESS_KEY_ID,
-                credentials.accessKeyId!!
-            )
-        } just runs
-        every {
-            anyConstructed<EncryptedSharedPreferences>().put(
-                SECRET_KEY,
-                credentials.secretKey!!
-            )
-        } just runs
-        every {
-            anyConstructed<EncryptedSharedPreferences>().put(
-                SESSION_TOKEN,
-                credentials.sessionToken!!
-            )
-        } just runs
-        every {
-            anyConstructed<EncryptedSharedPreferences>().put(
-                EXPIRATION,
-                credentials.expiration.toString()
-            )
-        } just runs
+        val provider = CognitoCredentialsProvider("identityPool", "us-east-1")
 
-        CognitoCredentialsProvider(context,"", credentials)
+        runBlocking {
 
-        verify {
-            anyConstructed<EncryptedSharedPreferences>().put(
-                ACCESS_KEY_ID,
-                credentials.accessKeyId!!
-            )
-            anyConstructed<EncryptedSharedPreferences>().put(SECRET_KEY, credentials.secretKey!!)
-            anyConstructed<EncryptedSharedPreferences>().put(
-                SESSION_TOKEN,
-                credentials.sessionToken!!
-            )
+            // Call resolve
+            val credentials = provider.resolve()
+
+            // Verify the returned credentials match what we expected
+            assertEquals("testAccessKeyId", credentials.accessKeyId)
+            assertEquals("testSessionToken", credentials.sessionToken)
+            assertEquals(expirationTime, credentials.expiration)
         }
     }
-
     @Test
-    fun `constructor without credentials throws when no credentials found`() {
-        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns null
+    fun `If credentials aren't expired they are returned successfully from the cache`() {
+        val expirationTime =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 10000)
+        val expirationTime2 =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 20000)
 
-        assertFailsWith<Exception> {
-            CognitoCredentialsProvider(context)
+        // Create mock CognitoIdentityClient
+        mockkConstructor(CognitoCredentialsProvider::class)
+        coEvery {
+            anyConstructed<CognitoCredentialsProvider>().fetchCognitoCredentials()
+        } returns Credentials.invoke {
+            expiration = expirationTime
+            secretKey = "testSecretKey"
+            accessKeyId = "testAccessKeyId"
+            sessionToken = "testSessionToken"
+        } andThen Credentials.invoke {
+            expiration = expirationTime2
+            secretKey = "testSecretKey2"
+            accessKeyId = "testAccessKeyId2"
+            sessionToken = "testSessionToken2"
+        }
+
+        val provider = CognitoCredentialsProvider("identityPool", "us-east-1")
+
+        runBlocking {
+
+            // Call resolve
+            var credentials = provider.resolve()
+
+            // Verify the returned credentials match what we expected
+            assertEquals("testAccessKeyId", credentials.accessKeyId)
+            assertEquals("testSessionToken", credentials.sessionToken)
+            assertEquals(expirationTime, credentials.expiration)
+
+            credentials = provider.resolve()
+
+            // Verify the returned credentials match what we expected
+            assertEquals("testAccessKeyId", credentials.accessKeyId)
+            assertEquals("testSessionToken", credentials.sessionToken)
+            assertEquals(expirationTime, credentials.expiration)
         }
     }
-
     @Test
-    fun `getCachedCredentials returns null when not all credentials are found`() {
-        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } returns "accessKeyId"
-        every { anyConstructed<EncryptedSharedPreferences>().get(SECRET_KEY) } returns null
-        every { anyConstructed<EncryptedSharedPreferences>().get(SESSION_TOKEN) } returns "sessionToken"
-        every { anyConstructed<EncryptedSharedPreferences>().get(EXPIRATION) } returns "1234567890.0"
+    fun `If credentials are expired they will trigger a refresh`() {
+        val expirationTime =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds - 10000)
+        val expirationTime2 =
+            Instant.fromEpochMilliseconds(Instant.now().epochMilliseconds + 20000)
 
-        val provider = try {
-            CognitoCredentialsProvider(context)
-        } catch (e: Exception) {
-            null
+        // Create mock CognitoIdentityClient
+        mockkConstructor(CognitoCredentialsProvider::class)
+        coEvery {
+            anyConstructed<CognitoCredentialsProvider>().fetchCognitoCredentials()
+        } returns Credentials.invoke {
+            expiration = expirationTime
+            secretKey = "testSecretKey"
+            accessKeyId = "testAccessKeyId"
+            sessionToken = "testSessionToken"
+        } andThen Credentials.invoke {
+            expiration = expirationTime2
+            secretKey = "testSecretKey2"
+            accessKeyId = "testAccessKeyId2"
+            sessionToken = "testSessionToken2"
         }
 
-        val cachedCredentials = provider?.getCachedCredentials()
+        val provider = CognitoCredentialsProvider("identityPool", "us-east-1")
 
-        assertNull(cachedCredentials)
-    }
+        runBlocking {
 
-    @Test
-    fun `getCachedCredentials throws when not initialized`() {
-        val provider = CognitoCredentialsProvider(
-            context,
-            "",
-            Credentials.invoke {
-                accessKeyId = "accessKeyId"
-                expiration = Instant.now()
-                secretKey = "secretKey"
-                sessionToken = "sessionToken"
-            }
-        )
+            // Call resolve
+            var credentials = provider.resolve()
 
-        every { anyConstructed<EncryptedSharedPreferences>().get(ACCESS_KEY_ID) } throws Exception("Not initialized")
+            // Verify the returned credentials match what we expected
+            assertEquals("testAccessKeyId", credentials.accessKeyId)
+            assertEquals("testSessionToken", credentials.sessionToken)
+            assertEquals(expirationTime, credentials.expiration)
 
-        assertFailsWith<Exception> {
-            provider.getCachedCredentials()
+            credentials = provider.resolve()
+
+            // Verify the returned credentials match what we expected
+            assertEquals("testAccessKeyId2", credentials.accessKeyId)
+            assertEquals("testSessionToken2", credentials.sessionToken)
+            assertEquals(expirationTime2, credentials.expiration)
         }
-    }
-
-    @Test
-    fun `clearCredentials clears the stored credentials`() {
-        val provider = CognitoCredentialsProvider(
-            context,
-            "",
-            Credentials.invoke {
-                accessKeyId = "accessKeyId"
-                expiration = Instant.now()
-                secretKey = "secretKey"
-                sessionToken = "sessionToken"
-            }
-        )
-
-        provider.clearCredentials()
-
-        verify { anyConstructed<EncryptedSharedPreferences>().remove(any()) }
     }
 }

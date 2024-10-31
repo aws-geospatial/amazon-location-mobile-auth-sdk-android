@@ -20,7 +20,7 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.DEFAULT, automaticRelease = true)
     signAllPublications()
 
-    coordinates("software.amazon.location", "auth", "0.2.5")
+    coordinates("software.amazon.location", "auth", "1.0.0")
 
     pom {
         name.set("Amazon Location Service Mobile Authentication SDK for Android")
@@ -83,18 +83,21 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
-    implementation("aws.sdk.kotlin:cognitoidentity:1.3.29")
-    implementation("aws.sdk.kotlin:location:1.3.29")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.core.ktx)
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.security.crypto)
+    implementation(libs.cognitoidentity)
+    implementation(libs.location)
+    implementation(libs.geomaps)
+    implementation(libs.geoplaces)
+    implementation(libs.georoutes)
+    implementation(libs.okhttp)
 
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.20")
-    testImplementation("io.mockk:mockk:1.13.10")
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.mockk)
 
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
 }

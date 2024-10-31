@@ -1,7 +1,9 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 package software.amazon.location.auth
 
-
-import android.content.Context
+import aws.smithy.kotlin.runtime.auth.awscredentials.Credentials
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -14,44 +16,46 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 import software.amazon.location.auth.utils.Constants
-import software.amazon.location.auth.utils.Constants.API_KEY
 import software.amazon.location.auth.utils.Constants.HEADER_HOST
 import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_CONTENT_SHA256
 import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_DATE
 import software.amazon.location.auth.utils.Constants.HEADER_X_AMZ_SECURITY_TOKEN
-import software.amazon.location.auth.utils.Constants.METHOD
 import software.amazon.location.auth.utils.Constants.QUERY_PARAM_KEY
 import software.amazon.location.auth.utils.Constants.TIME_PATTERN
 import software.amazon.location.auth.utils.HASHING_ALGORITHM
 import software.amazon.location.auth.utils.awsAuthorizationHeader
 
 class AwsSignerInterceptor(
-    private val context: Context,
     private val serviceName: String,
     private val region: String,
     private val credentialsProvider: LocationCredentialsProvider?
 ) : Interceptor {
 
     private val sdfMap = HashMap<String, SimpleDateFormat>()
-    private var securePreferences: EncryptedSharedPreferences?= null
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
-        if (!originalRequest.url.host.contains("amazonaws.com") || credentialsProvider?.getCredentialsProvider() == null) {
+        val credentials: Credentials?
+        runBlocking {
+            credentials = credentialsProvider?.getCredentials()
+        }
+        if (!originalRequest.url.host.contains("amazonaws.com") || credentials == null) {
             return chain.proceed(originalRequest)
         }
-        if (securePreferences == null){
-            securePreferences = initPreference(context)
-        }
-        val method = securePreferences?.get(METHOD)
+        val method = credentialsProvider?.getMethod()
         if (method === null) throw Exception("No credentials found")
         if (method == "apiKey") {
             val originalHttpUrl = originalRequest.url
             val hasKey = originalHttpUrl.queryParameter(QUERY_PARAM_KEY) != null
             val newHttpUrl = if (!hasKey) {
-                val apiKey = securePreferences?.get(API_KEY)
-                originalHttpUrl.newBuilder()
-                    .addQueryParameter(QUERY_PARAM_KEY, apiKey)
-                    .build()
+                val apiKey = credentialsProvider?.getApiKey()
+                if (!apiKey.isNullOrEmpty()) {
+                    originalHttpUrl.newBuilder()
+                        .addQueryParameter(QUERY_PARAM_KEY, apiKey)
+                        .build()
+                }
+                else {
+                    originalHttpUrl
+                }
             } else {
                 originalHttpUrl
             }
@@ -61,14 +65,9 @@ class AwsSignerInterceptor(
 
             return chain.proceed(newRequest)
         } else {
-            runBlocking {
-                if (!credentialsProvider.isCredentialsValid()) {
-                    credentialsProvider.verifyAndRefreshCredentials()
-                }
-            }
-            val accessKeyId = credentialsProvider.getCredentialsProvider().accessKeyId
-            val secretKey = credentialsProvider.getCredentialsProvider().secretKey
-            val sessionToken = credentialsProvider.getCredentialsProvider().sessionToken
+            val accessKeyId = credentials.accessKeyId
+            val secretKey = credentials.secretAccessKey
+            val sessionToken = credentials.sessionToken
             if (!accessKeyId.isNullOrEmpty() && !secretKey.isNullOrEmpty() && !sessionToken.isNullOrEmpty() && region.isNotEmpty()) {
                 val dateMilli = Date().time
                 val host = extractHostHeader(originalRequest.url.toString())
@@ -99,10 +98,6 @@ class AwsSignerInterceptor(
             }
             return chain.proceed(originalRequest)
         }
-    }
-
-    fun initPreference(context: Context): EncryptedSharedPreferences {
-        return EncryptedSharedPreferences(context, PREFS_NAME).apply { initEncryptedSharedPreferences() }
     }
 
     private fun extractHostHeader(urlString: String): String {
