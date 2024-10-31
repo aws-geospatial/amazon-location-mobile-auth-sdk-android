@@ -59,7 +59,7 @@ class AuthHelperTest {
     @Test
     fun `authenticateWithCognitoIdentityPool with identityPoolId creates LocationCredentialsProvider`() {
         runBlocking {
-            val provider = AuthHelper.withCognitoIdentityPool(context, TEST_IDENTITY_POOL_ID)
+            val provider = AuthHelper.withCognitoIdentityPool(TEST_IDENTITY_POOL_ID, context)
             assertNotNull(provider)
         }
     }
@@ -68,7 +68,7 @@ class AuthHelperTest {
     fun `authenticateWithCognitoIdentityPool with identityPoolId and string region creates LocationCredentialsProvider`() {
         runBlocking {
             val provider =
-                AuthHelper.withCognitoIdentityPool(context, TEST_IDENTITY_POOL_ID, "us-east-1")
+                AuthHelper.withCognitoIdentityPool(TEST_IDENTITY_POOL_ID, "us-east-1", context)
             assertNotNull(provider)
         }
     }
@@ -78,9 +78,9 @@ class AuthHelperTest {
         runBlocking {
             val provider =
                 AuthHelper.withCognitoIdentityPool(
-                    context,
                     TEST_IDENTITY_POOL_ID,
-                    AwsRegions.US_EAST_1
+                    AwsRegions.US_EAST_1,
+                    context
                 )
             assertNotNull(provider)
         }
@@ -91,9 +91,9 @@ class AuthHelperTest {
         runBlocking {
             val provider =
                 AuthHelper.withCredentialsProvider(
-                    context,
                     credentialsProvider,
                     "us-east-1",
+                    context,
                 )
             assertNotNull(provider)
         }
@@ -102,7 +102,7 @@ class AuthHelperTest {
     @Test
     fun `authenticateWithApiKey creates LocationCredentialsProvider`() {
         runBlocking {
-            val provider = AuthHelper.withApiKey(context, TEST_API_KEY,"us-east-1")
+            val provider = AuthHelper.withApiKey(TEST_API_KEY,"us-east-1", context)
             assertNotNull(provider)
         }
     }

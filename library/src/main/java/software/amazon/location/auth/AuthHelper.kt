@@ -20,8 +20,8 @@ object AuthHelper {
      * @return A LocationCredentialsProvider object.
      */
     suspend fun withCognitoIdentityPool(
-        context: Context,
         identityPoolId: String,
+        context: Context,
     ): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
@@ -42,9 +42,9 @@ object AuthHelper {
      * @return A LocationCredentialsProvider object.
      */
     suspend fun withCognitoIdentityPool(
-        context: Context,
         identityPoolId: String,
         region: String,
+        context: Context,
     ): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
@@ -64,9 +64,9 @@ object AuthHelper {
      * @return A LocationCredentialsProvider object.
      */
     suspend fun withCognitoIdentityPool(
-        context: Context,
         identityPoolId: String,
         region: AwsRegions,
+        context: Context,
     ): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
@@ -112,9 +112,9 @@ object AuthHelper {
      * @return A `LocationCredentialsProvider` object.
      */
     suspend fun withCredentialsProvider(
-        context: Context,
         credentialsProvider: CredentialsProvider,
         region: String,
+        context: Context,
     ): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
@@ -132,8 +132,7 @@ object AuthHelper {
      * @param region The AWS region as a string.
      * @return A LocationCredentialsProvider instance.
      */
-    suspend fun withApiKey(        context: Context,
-                                               apiKey: String, region: String): LocationCredentialsProvider {
+    suspend fun withApiKey(apiKey: String, region: String, context: Context): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
                 context,
