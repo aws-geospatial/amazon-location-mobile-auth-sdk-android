@@ -18,14 +18,14 @@ implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
 For the new standalone Maps / Places / Routes SDKs, add the following lines:
 ```
-implementation("aws.sdk.kotlin:geomaps:1.3.60")
-implementation("aws.sdk.kotlin:geoplaces:1.3.60")
-implementation("aws.sdk.kotlin:georoutes:1.3.60")
+implementation("aws.sdk.kotlin:geomaps:1.3.65")
+implementation("aws.sdk.kotlin:geoplaces:1.3.65")
+implementation("aws.sdk.kotlin:georoutes:1.3.65")
 ```
 
 For the consolidated Location SDK that includes Geofencing and Tracking, add the following line:
 ```
-implementation("aws.sdk.kotlin:location:1.3.60")
+implementation("aws.sdk.kotlin:location:1.3.65")
 ```
 
 ## Usage
@@ -53,47 +53,44 @@ You can create an AuthHelper and use it with the AWS Kotlin SDK:
 ```
 // Create a credential provider using Identity Pool Id with AuthHelper
 private suspend fun exampleCognitoLogin() {
-    var authHelper = AuthHelper(applicationContext)
-    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCognitoIdentityPool("MY-COGNITO-IDENTITY-POOL-ID")
+    val authHelper = AuthHelper.withCognitoIdentityPool("MY-COGNITO-IDENTITY-POOL-ID")
     
     // Get instances of the standalone clients:
-    var geoMapsClient = locationCredentialsProvider?.getGeoMapsClient()
-    var geoPlacesClient = locationCredentialsProvider?.getGeoPlacesClient()
-    var geoRoutesClient = locationCredentialsProvider?.getGeoRoutesClient()
+    var geoMapsClient = GeoMapsClient(authHelper?.getGeoMapsClientConfig())
+    var geoPlacesClient = GeoPlacesClient(authHelper?.getGeoPlacesClientConfig())
+    var geoRoutesClient = GeoRoutesClient(authHelper?.getGeoRoutesClientConfig())
     
     // Get an instance of the Location client:
-    var locationClient = locationCredentialsProvider?.getLocationClient()
+    var locationClient = LocationClient(authHelper?.getLocationClientConfig())
 }
 
 OR
 
 // Create a credential provider using custom credential provider with AuthHelper
 private suspend fun exampleCustomCredentialLogin() {
-    var authHelper = AuthHelper(applicationContext)
-    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithCredentialsProvider("MY-AWS-REGION", MY-CUSTOM-CREDENTIAL-PROVIDER)
+    var authHelper = AuthHelper.withCredentialsProvider(MY-CUSTOM-CREDENTIAL-PROVIDER, "MY-AWS-REGION")
 
     // Get instances of the standalone clients:
-    var geoMapsClient = locationCredentialsProvider?.getGeoMapsClient()
-    var geoPlacesClient = locationCredentialsProvider?.getGeoPlacesClient()
-    var geoRoutesClient = locationCredentialsProvider?.getGeoRoutesClient()
+    var geoMapsClient = GeoMapsClient(authHelper?.getGeoMapsClientConfig())
+    var geoPlacesClient = GeoPlacesClient(authHelper?.getGeoPlacesClientConfig())
+    var geoRoutesClient = GeoRoutesClient(authHelper?.getGeoRoutesClientConfig())
     
     // Get an instance of the Location client:
-    var locationClient = locationCredentialsProvider?.getLocationClient()}
+    var locationClient = LocationClient(authHelper?.getLocationClientConfig())
 
 OR
 
 // Create a credential provider using Api key with AuthHelper
 private suspend fun exampleApiKeyLogin() {
-    var authHelper = AuthHelper(applicationContext)
-    var locationCredentialsProvider : LocationCredentialsProvider = authHelper.authenticateWithApiKey("MY-API-KEY", "MY-AWS-REGION")
+    var authHelper = AuthHelper.withApiKey("MY-API-KEY", "MY-AWS-REGION")
 
     // Get instances of the standalone clients:
-    var geoMapsClient = locationCredentialsProvider?.getGeoMapsClient()
-    var geoPlacesClient = locationCredentialsProvider?.getGeoPlacesClient()
-    var geoRoutesClient = locationCredentialsProvider?.getGeoRoutesClient()
+    var geoMapsClient = GeoMapsClient(authHelper?.getGeoMapsClientConfig())
+    var geoPlacesClient = GeoPlacesClient(authHelper?.getGeoPlacesClientConfig())
+    var geoRoutesClient = GeoRoutesClient(authHelper?.getGeoRoutesClientConfig())
     
     // Get an instance of the Location client:
-    var locationClient = locationCredentialsProvider?.getLocationClient()
+    var locationClient = LocationClient(authHelper?.getLocationClientConfig())
 }
 ```
 You can use the LocationCredentialsProvider to load the maplibre map. Here is an example of that:
@@ -113,7 +110,7 @@ HttpRequestUtil.setOkHttpClient(
 )
 ```
 
-You can use the returned clients to make calls to Amazon Location Service. Here is an example that searches for places near a specified latitude and longitude:
+You can use the created clients to make calls to Amazon Location Service. Here is an example that searches for places near a specified latitude and longitude:
 
 ```
 val suggestRequest = SuggestRequest {
