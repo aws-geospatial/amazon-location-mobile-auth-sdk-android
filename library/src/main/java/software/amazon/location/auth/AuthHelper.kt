@@ -3,6 +3,7 @@
 
 package software.amazon.location.auth
 
+import android.content.Context
 import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,13 +21,16 @@ object AuthHelper {
      */
     suspend fun withCognitoIdentityPool(
         identityPoolId: String,
+        context: Context,
     ): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
+                context,
                 identityPoolId,
                 // Get the region from the identity pool id
                 AwsRegions.fromName(identityPoolId.split(":")[0]),
             )
+            locationCredentialsProvider.verifyAndRefreshCredentials()
             locationCredentialsProvider // Return the generated locationCredentialsProvider
         }
     }
@@ -40,12 +44,37 @@ object AuthHelper {
     suspend fun withCognitoIdentityPool(
         identityPoolId: String,
         region: String,
+        context: Context,
     ): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
+                context,
                 identityPoolId,
                 AwsRegions.fromName(region),
             )
+            locationCredentialsProvider.verifyAndRefreshCredentials()
+            locationCredentialsProvider // Return the generated locationCredentialsProvider
+        }
+    }
+
+    /**
+     * Authenticates using a Cognito Identity Pool ID and a specified region.
+     * @param identityPoolId The identity pool id.
+     * @param region The AWS region as a Regions enum.
+     * @return A LocationCredentialsProvider object.
+     */
+    suspend fun withCognitoIdentityPool(
+        identityPoolId: String,
+        region: AwsRegions,
+        context: Context,
+    ): LocationCredentialsProvider {
+        return withContext(Dispatchers.IO) {
+            val locationCredentialsProvider = LocationCredentialsProvider(
+                context,
+                identityPoolId,
+                region,
+            )
+            locationCredentialsProvider.verifyAndRefreshCredentials()
             locationCredentialsProvider // Return the generated locationCredentialsProvider
         }
     }
@@ -85,12 +114,14 @@ object AuthHelper {
     suspend fun withCredentialsProvider(
         credentialsProvider: CredentialsProvider,
         region: String,
+        context: Context,
     ): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
-                credentialsProvider,
+                context,
                 AwsRegions.fromName(region),
             )
+            locationCredentialsProvider.initializeLocationClient(credentialsProvider)
             locationCredentialsProvider
         }
     }
@@ -101,12 +132,14 @@ object AuthHelper {
      * @param region The AWS region as a string.
      * @return A LocationCredentialsProvider instance.
      */
-    suspend fun withApiKey(apiKey: String, region: String): LocationCredentialsProvider {
+    suspend fun withApiKey(apiKey: String, region: String, context: Context): LocationCredentialsProvider {
         return withContext(Dispatchers.IO) {
             val locationCredentialsProvider = LocationCredentialsProvider(
+                context,
                 AwsRegions.fromName(region),
                 apiKey,
             )
+            locationCredentialsProvider.initializeLocationClient()
             locationCredentialsProvider
         }
     }

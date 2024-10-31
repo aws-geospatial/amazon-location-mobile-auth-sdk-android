@@ -53,7 +53,7 @@ You can create an AuthHelper and use it with the AWS Kotlin SDK:
 ```
 // Create a credential provider using Identity Pool Id with AuthHelper
 private suspend fun exampleCognitoLogin() {
-    val authHelper = AuthHelper.withCognitoIdentityPool("MY-COGNITO-IDENTITY-POOL-ID")
+    val authHelper = AuthHelper.withCognitoIdentityPool("MY-COGNITO-IDENTITY-POOL-ID", applicationContext)
     
     // Get instances of the standalone clients:
     var geoMapsClient = GeoMapsClient(authHelper?.getGeoMapsClientConfig())
@@ -68,7 +68,7 @@ OR
 
 // Create a credential provider using custom credential provider with AuthHelper
 private suspend fun exampleCustomCredentialLogin() {
-    var authHelper = AuthHelper.withCredentialsProvider(MY-CUSTOM-CREDENTIAL-PROVIDER, "MY-AWS-REGION")
+    var authHelper = AuthHelper.withCredentialsProvider(MY-CUSTOM-CREDENTIAL-PROVIDER, "MY-AWS-REGION", applicationContext)
 
     // Get instances of the standalone clients:
     var geoMapsClient = GeoMapsClient(authHelper?.getGeoMapsClientConfig())
@@ -82,7 +82,7 @@ OR
 
 // Create a credential provider using Api key with AuthHelper
 private suspend fun exampleApiKeyLogin() {
-    var authHelper = AuthHelper.withApiKey("MY-API-KEY", "MY-AWS-REGION")
+    var authHelper = AuthHelper.withApiKey("MY-API-KEY", "MY-AWS-REGION", applicationContext)
 
     // Get instances of the standalone clients:
     var geoMapsClient = GeoMapsClient(authHelper?.getGeoMapsClientConfig())
@@ -100,10 +100,10 @@ HttpRequestUtil.setOkHttpClient(
     OkHttpClient.Builder()
         .addInterceptor(
             AwsSignerInterceptor(
-                applicationContext,
                 "geo",
                 "MY-AWS-REGION",
-                locationCredentialsProvider
+                locationCredentialsProvider,
+                applicationContext
             )
         )
         .build()
