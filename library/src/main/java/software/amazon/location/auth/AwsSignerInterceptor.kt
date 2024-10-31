@@ -29,10 +29,10 @@ import software.amazon.location.auth.utils.HASHING_ALGORITHM
 import software.amazon.location.auth.utils.awsAuthorizationHeader
 
 class AwsSignerInterceptor(
-    private val context: Context,
     private val serviceName: String,
     private val region: String,
-    private val credentialsProvider: LocationCredentialsProvider?
+    private val credentialsProvider: LocationCredentialsProvider?,
+    private val context: Context,
 ) : Interceptor {
 
     private val sdfMap = HashMap<String, SimpleDateFormat>()

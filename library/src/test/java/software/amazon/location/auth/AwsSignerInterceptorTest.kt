@@ -45,10 +45,10 @@ class AwsSignerInterceptorTest {
         mockkConstructor(EncryptedSharedPreferences::class)
         mockkConstructor(AwsSignerInterceptor::class)
         interceptor = AwsSignerInterceptor(
-            context,
             "execute-api",
             TEST_REGION,
-            mockCredentialsProvider
+            mockCredentialsProvider,
+            context,
         )
         every { anyConstructed<EncryptedSharedPreferences>().initEncryptedSharedPreferences() } just runs
         every { anyConstructed<EncryptedSharedPreferences>().get(METHOD) } returns "cognito"
