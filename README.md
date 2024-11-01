@@ -11,7 +11,7 @@ SDK on Maven Central.
 Add the following lines to the dependencies section of your build.gradle file in Android Studio:
 
 ```
-implementation("software.amazon.location:auth:1.0.0")
+implementation("software.amazon.location:auth:1.1.0")
 implementation("org.maplibre.gl:android-sdk:11.5.2")
 implementation("com.squareup.okhttp3:okhttp:4.12.0")
 ```
