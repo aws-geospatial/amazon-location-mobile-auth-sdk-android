@@ -5,6 +5,9 @@ on:
     branches: [ main ]
 jobs:
   test-android:
+    permissions:
+      contents: read
+      actions: write
     name: Test Android
     runs-on: ubuntu-latest
     steps:
