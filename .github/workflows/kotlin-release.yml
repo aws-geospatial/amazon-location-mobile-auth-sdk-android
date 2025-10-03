@@ -1,0 +1,22 @@
+name: Release Package - Kotlin
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  release-kotlin:
+    permissions:
+      contents: write
+      actions: write
+      packages: write
+    uses: aws-geospatial/github-workflows-for-amazon-location/.github/workflows/kotlin-release.yml@main
+    with:
+      working-directory: "."
+    secrets:
+      SONATYPE_ACCOUNT_USERNAME: ${{ secrets.SONATYPE_ACCOUNT_USERNAME }}
+      SONATYPE_ACCOUNT_PASSWORD: ${{ secrets.SONATYPE_ACCOUNT_PASSWORD }}
+      SONATYPE_ACCOUNT_GPG_KEY: ${{ secrets.SONATYPE_ACCOUNT_GPG_KEY }}
+      SONATYPE_ACCOUNT_GPG_KEY_ID: ${{ secrets.SONATYPE_ACCOUNT_GPG_KEY_ID }}
+      SONATYPE_ACCOUNT_GPG_KEY_PASSWORD: ${{ secrets.SONATYPE_ACCOUNT_GPG_KEY_PASSWORD }}
