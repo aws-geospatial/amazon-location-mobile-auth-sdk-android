@@ -1,3 +1,9 @@
+# 1.1.1
+
+### ✨ Features and improvements
+
+- Several dependency updates.
+
 # 1.1.0
 
 ### 🐞 Bug Fixes
