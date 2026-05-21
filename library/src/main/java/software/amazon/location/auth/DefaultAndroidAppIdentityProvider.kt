@@ -16,8 +16,7 @@ class DefaultAndroidAppIdentityProvider(private val context: Context) : AndroidA
     override val packageName: String
         get() = context.packageName
 
-    override val certFingerprint: String?
-        get() = getSigningCertFingerprint()
+    override val certFingerprint: String? by lazy { getSigningCertFingerprint() }
 
     private fun getSigningCertFingerprint(): String? {
         return try {

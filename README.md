@@ -110,6 +110,17 @@ HttpRequestUtil.setOkHttpClient(
 )
 ```
 
+### Using API Key Android App Restrictions
+
+If your API key is configured with [Android app restrictions](https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html), the SDK automatically attaches the required `X-Android-Package` and `X-Android-Cert` headers to all API key requests made through the SDK clients and `AwsSignerInterceptor`. The SDK reads the package name and signing certificate fingerprint from your app automatically.
+
+For MapLibre map tile requests, use `MapHttpClientProvider`:
+
+```
+MapLibre.getInstance(this)
+HttpRequestUtil.setOkHttpClient(MapHttpClientProvider.getMapHttpClient(applicationContext))
+```
+
 You can use the created clients to make calls to Amazon Location Service. Here is an example that searches for places near a specified latitude and longitude:
 
 ```
