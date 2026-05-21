@@ -58,8 +58,13 @@ class AwsSignerInterceptor(
             } else {
                 originalHttpUrl
             }
+            val identityProvider = DefaultAndroidAppIdentityProvider(context)
             val newRequest = originalRequest.newBuilder()
                 .url(newHttpUrl)
+                .header("X-Android-Package", identityProvider.packageName)
+                .apply {
+                    identityProvider.certFingerprint?.let { header("X-Android-Cert", it) }
+                }
                 .build()
 
             return chain.proceed(newRequest)

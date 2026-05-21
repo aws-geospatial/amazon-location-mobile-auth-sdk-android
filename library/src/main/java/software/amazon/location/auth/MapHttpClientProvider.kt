@@ -14,9 +14,8 @@ import okhttp3.OkHttpClient
  *
  * Usage:
  * ```
- * val mapHttpClient = LocationCredentialsProvider.getMapHttpClient(context)
- * HttpRequestUtil.setOkHttpClient(mapHttpClient)
  * MapLibre.getInstance(this)
+ * HttpRequestUtil.setOkHttpClient(MapHttpClientProvider.getMapHttpClient(this))
  * ```
  */
 object MapHttpClientProvider {
