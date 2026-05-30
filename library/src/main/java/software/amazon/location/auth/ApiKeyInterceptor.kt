@@ -3,6 +3,7 @@
 
 package software.amazon.location.auth
 
+import android.content.Context
 import aws.smithy.kotlin.runtime.client.ProtocolRequestInterceptorContext
 import aws.smithy.kotlin.runtime.http.interceptors.HttpInterceptor
 import aws.smithy.kotlin.runtime.http.request.HttpRequest
@@ -13,15 +14,29 @@ import software.amazon.location.auth.utils.Constants.QUERY_PARAM_KEY
 
 class ApiKeyInterceptor(
     private val apiKey: String,
+    private val appIdentityProvider: AndroidAppIdentityProvider? = null,
 ) : HttpInterceptor {
+
+    constructor(apiKey: String, context: Context) : this(
+        apiKey,
+        DefaultAndroidAppIdentityProvider(context)
+    )
+
     override suspend fun modifyBeforeSigning(context: ProtocolRequestInterceptorContext<Any, HttpRequest>): HttpRequest {
         val req = context.protocolRequest.toBuilder()
 
+        appIdentityProvider?.let { provider ->
+            req.headers.append("X-Android-Package", provider.packageName)
+            provider.certFingerprint?.let { fingerprint ->
+                req.headers.append("X-Android-Cert", fingerprint)
+            }
+        }
+
         return if (!context.protocolRequest.url.toString().contains("$QUERY_PARAM_KEY=")) {
-            req.url(Url.parse(context.protocolRequest.url.toString()+"?$QUERY_PARAM_KEY=$apiKey"))
+            req.url(Url.parse(context.protocolRequest.url.toString() + "?$QUERY_PARAM_KEY=$apiKey"))
             req.build()
         } else {
-            super.modifyBeforeSigning(context)
+            req.build()
         }
     }
 }

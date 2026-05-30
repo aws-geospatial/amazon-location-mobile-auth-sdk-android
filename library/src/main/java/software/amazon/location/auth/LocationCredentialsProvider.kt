@@ -132,7 +132,7 @@ class LocationCredentialsProvider {
                     val apiKey = securePreferences.get(API_KEY) ?: throw Exception("API key not found")
                     this.region = region
                     this.credentialsProvider = createEmptyCredentialsProvider()
-                    this.interceptors = mutableListOf(ApiKeyInterceptor(apiKey))
+                    this.interceptors = mutableListOf(ApiKeyInterceptor(apiKey, this@LocationCredentialsProvider.context))
                 }
                 else -> {
                     this.region = region
@@ -160,7 +160,7 @@ class LocationCredentialsProvider {
                     val apiKey = securePreferences.get(API_KEY) ?: throw Exception("API key not found")
                     this.region = region
                     this.credentialsProvider = createEmptyCredentialsProvider()
-                    this.interceptors = mutableListOf(ApiKeyInterceptor(apiKey))
+                    this.interceptors = mutableListOf(ApiKeyInterceptor(apiKey, this@LocationCredentialsProvider.context))
                 }
                 else -> {
                     this.region = region
@@ -188,7 +188,7 @@ class LocationCredentialsProvider {
                     val apiKey = securePreferences.get(API_KEY) ?: throw Exception("API key not found")
                     this.region = region
                     this.credentialsProvider = createEmptyCredentialsProvider()
-                    this.interceptors = mutableListOf(ApiKeyInterceptor(apiKey))
+                    this.interceptors = mutableListOf(ApiKeyInterceptor(apiKey, this@LocationCredentialsProvider.context))
                 }
                 else -> {
                     this.region = region
@@ -216,7 +216,7 @@ class LocationCredentialsProvider {
                     val apiKey = securePreferences.get(API_KEY) ?: throw Exception("API key not found")
                     this.region = region
                     this.credentialsProvider = createEmptyCredentialsProvider()
-                    this.interceptors = mutableListOf(ApiKeyInterceptor(apiKey))
+                    this.interceptors = mutableListOf(ApiKeyInterceptor(apiKey, this@LocationCredentialsProvider.context))
                 }
                 else -> {
                     this.region = region
