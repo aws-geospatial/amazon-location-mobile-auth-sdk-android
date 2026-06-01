@@ -20,7 +20,7 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL, automaticRelease = true)
     signAllPublications()
 
-    coordinates("software.amazon.location", "auth", "1.1.1")
+    coordinates("software.amazon.location", "auth", "1.1.2")
 
     pom {
         name.set("Amazon Location Service Mobile Authentication SDK for Android")
