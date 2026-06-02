@@ -1,6 +1,4 @@
-# 1.1.1
-
-## 1.1.2
+# 1.1.2
 
 ### ✨ Features and improvements
 
@@ -12,6 +10,7 @@
 - Add X-Android-Package and X-Android-Cert headers to API key requests
 - Merge pull request #22 from aws-geospatial/feat/add-release-and-retry-workflows
 
+# 1.1.1
 
 ### ✨ Features and improvements
 
